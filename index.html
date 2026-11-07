@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="家にある商品のバーコードをピッとすると、その商品だけのモンスターが召喚される。同じバーコードなら、だれが読んでも同じモンスター。">
+<meta name="theme-color" content="#127a5c">
+<title>ピッ！とモンスター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+/* Layout: 読み取り窓の下に召喚カード。モンスターが主役。1画面アプリ、下にタブ。 */
+:root{
+  --bg:#dfe4e2; --counter:#eef1ef; --paper:#fdfdfb; --paper-ink:#24262a; --paper-faint:#8a8f93;
+  --ink:#1b2128; --muted:#5d666d; --line:#c5cccb;
+  --scan:#ff2d3a; --accent:#127a5c; --accent-ink:#ffffff; --warn:#c2410c; --ok:#178a4f;
+  --f-led:"DotGothic16","Hiragino Sans",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+  --f-mono:"M PLUS 1 Code","Osaka-Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101416; --counter:#181e21; --paper:#eceee9; --paper-ink:#1d1f22; --paper-faint:#7d8287;
+  --ink:#e3e8e6; --muted:#97a1a6; --line:#2a3337;
+  --scan:#ff4752; --accent:#3fc596; --accent-ink:#06261b; --warn:#fb8c4a; --ok:#4fd08a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101416; --counter:#181e21; --paper:#eceee9; --paper-ink:#1d1f22; --paper-faint:#7d8287;
+  --ink:#e3e8e6; --muted:#97a1a6; --line:#2a3337;
+  --scan:#ff4752; --accent:#3fc596; --accent-ink:#06261b; --warn:#fb8c4a; --ok:#4fd08a; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;display:flex;flex-direction:column}
+.wrap{flex:1;overflow-y:auto;overflow-x:hidden;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 28px}
+.inner{width:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:18px;min-width:0}
+.view{display:flex;flex-direction:column;gap:16px;min-width:0;width:100%}
+.view[hidden]{display:none}
+header.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.logo{font-family:var(--f-led);font-weight:400;font-size:24px;letter-spacing:.03em;margin:0;line-height:1.2}
+.logo b{font-weight:400;color:var(--scan)}
+.count{font-family:var(--f-mono);font-size:12px;color:var(--muted);white-space:nowrap}
+h2{font-family:var(--f-led);font-weight:400;font-size:18px;margin:0;letter-spacing:.04em}
+p{margin:0}
+.muted{color:var(--muted);font-size:13px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--counter);border-radius:10px;padding:10px 14px;font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:6px 10px;font-size:13px}
+.btn.danger{color:var(--warn);border-color:var(--warn);background:transparent}
+.btn.big{font-size:17px;padding:14px 18px;width:100%}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.panel{background:var(--counter);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+
+/* 読み取り窓 */
+.scanner{display:flex;flex-direction:column;gap:8px}
+.scanrow{display:flex;gap:8px;align-items:stretch}
+.window[hidden]{display:none}
+.window{position:relative;aspect-ratio:4/3;max-width:100%;border-radius:10px;overflow:hidden;background:
+  repeating-linear-gradient(90deg,#141a1b 0 6px,#101516 6px 12px)}
+.window video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.window .laser{position:absolute;left:8%;right:8%;top:50%;height:2px;background:var(--scan);box-shadow:0 0 12px 3px color-mix(in srgb,var(--scan) 70%,transparent)}
+.window.on .laser{animation:sweep 1.6s ease-in-out infinite alternate}
+@keyframes sweep{from{top:28%}to{top:72%}}
+.window .guide{position:absolute;inset:22% 10%;border:2px dashed rgba(255,255,255,.35);border-radius:8px}
+.window.flash::after{content:"";position:absolute;inset:0;background:#fff;animation:flash .35s ease-out forwards}
+@keyframes flash{from{opacity:.85}to{opacity:0}}
+.led{flex:1;min-width:0;display:flex;align-items:center;font-family:var(--f-led);font-size:13px;background:#06120d;color:#7dff9e;padding:6px 12px;border-radius:10px;letter-spacing:.04em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.led.alert{color:#ffb15c}
+.field{display:flex;gap:8px}
+.field input{flex:1;min-width:0;font-family:var(--f-mono);font-size:16px;letter-spacing:.06em;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+
+/* 召喚カード */
+.mcard{--el:#888;background:var(--counter);border:1px solid var(--line);border-radius:18px;overflow:hidden;max-width:380px;width:100%;margin:0 auto;display:flex;flex-direction:column}
+.stage{position:relative;aspect-ratio:5/4;max-width:100%;display:grid;place-items:center;overflow:hidden;
+  background:radial-gradient(circle at 50% 58%,color-mix(in srgb,var(--el) 55%,transparent) 0,color-mix(in srgb,var(--el) 18%,transparent) 45%,transparent 70%),
+  repeating-conic-gradient(from 0deg at 50% 58%,color-mix(in srgb,var(--el) 10%,transparent) 0 8deg,transparent 8deg 16deg),var(--bg)}
+.stage canvas{width:190px;height:190px;image-rendering:pixelated;position:relative;z-index:1;filter:drop-shadow(0 8px 6px rgba(0,0,0,.25))}
+.stage .floor{position:absolute;left:50%;bottom:12%;width:150px;height:20px;transform:translateX(-50%);border-radius:50%;background:color-mix(in srgb,var(--el) 35%,transparent);filter:blur(2px)}
+.stage .stars{position:absolute;top:10px;left:12px;color:#e2a200;font-size:16px;letter-spacing:.04em;text-shadow:0 1px 0 rgba(0,0,0,.25);z-index:2}
+.stage .elem{position:absolute;top:10px;right:12px;z-index:2}
+.stage .newb{position:absolute;bottom:10px;left:12px;z-index:2;font-family:var(--f-led);font-size:13px;background:var(--scan);color:#fff;padding:0 8px;border-radius:4px}
+.mcard.empty .stage{background:repeating-conic-gradient(from 0deg at 50% 58%,color-mix(in srgb,var(--muted) 7%,transparent) 0 8deg,transparent 8deg 16deg),var(--bg)}
+.ghost{position:relative;z-index:1;width:120px;height:120px;display:grid;place-items:center;border:2px dashed var(--line);border-radius:50%;font-family:var(--f-led);font-size:44px;color:var(--muted)}
+.mcard.empty .mname{font-size:18px}
+.mcard.empty .mbody{align-items:center;text-align:center;gap:4px;padding-block:14px 18px}
+details.acc{background:var(--counter);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+details.acc summary{list-style:none;cursor:pointer;padding:14px;font-family:var(--f-led);font-size:18px;display:flex;justify-content:space-between;align-items:center}
+details.acc summary::-webkit-details-marker{display:none}
+details.acc summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-3px);transition:transform .2s}
+details.acc[open] summary::after{transform:rotate(-135deg) translateY(-3px)}
+details.acc .acc-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+.stage .sample{position:absolute;bottom:10px;right:12px;z-index:2;border:2px solid var(--warn);color:var(--warn);background:var(--counter);font-weight:700;padding:0 6px;font-size:12px;border-radius:4px}
+.mcard.summon .stage canvas{animation:pop .9s cubic-bezier(.2,1.4,.4,1) both}
+.mcard.summon .stage::after{content:"";position:absolute;left:50%;top:58%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:4px solid var(--el);animation:burst .8s ease-out both}
+@keyframes pop{0%{transform:scale(.1) translateY(40px);filter:brightness(4)}60%{filter:brightness(1.4)}100%{transform:none}}
+@keyframes burst{from{transform:scale(.5);opacity:1}to{transform:scale(9);opacity:0}}
+.mbody{padding:12px 16px 14px;display:flex;flex-direction:column;gap:10px}
+.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.mname{font-family:var(--f-led);font-size:26px;line-height:1.2;word-break:break-all;min-width:0}
+.mlv{font-family:var(--f-mono);font-size:14px;color:var(--muted);white-space:nowrap}
+.mfrom .tribe{color:var(--ink);font-family:var(--f-body)}
+.mfrom{font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+.sbars{display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;align-items:center;font-size:12px}
+.sbars span:nth-child(3n+1){color:var(--muted)}
+.sbars .bar{height:7px;border-radius:4px;background:var(--line);overflow:hidden}
+.sbars .bar i{display:block;height:100%;background:var(--el)}
+.sbars b{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;min-width:3ch}
+.mfoot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+.mfoot b{color:var(--ink)}
+.after{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.toast{font-weight:700;color:var(--ok);text-align:center}
+
+/* 図鑑 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.cell{background:var(--counter);border:1px solid var(--line);border-radius:12px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:0}
+.cell canvas{width:68px;height:68px;image-rendering:pixelated}
+.cell .n{font-family:var(--f-led);font-size:13px;line-height:1.3;word-break:break-all}
+.cell .s{font-size:11px;color:var(--muted)}
+.cell.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.empty{grid-column:1/-1;border:1px dashed var(--line);border-radius:12px;padding:20px;text-align:center;color:var(--muted)}
+.tabs-mini{display:flex;gap:6px;flex-wrap:wrap}
+.tabs-mini button{border:1px solid var(--line);background:transparent;border-radius:99px;padding:2px 10px;font-size:12px}
+.tabs-mini button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* 対戦 */
+.arena{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.fighter{background:var(--counter);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-align:center}
+.fighter canvas{width:80px;height:80px;image-rendering:pixelated}
+.fighter.hurt canvas{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.fighter .n{font-family:var(--f-led);font-size:14px;word-break:break-all}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:0 8px;border-radius:99px;color:#fff}
+.hp{width:100%;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.hp i{display:block;height:100%;background:var(--ok);transition:width .4s}
+.hp i.low{background:var(--warn)}
+.hpn{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.vs{font-family:var(--f-led);font-size:20px;color:var(--scan)}
+.credit{text-align:center;font-size:12px;padding-top:8px}
+.note{margin:0;text-align:center;font-size:13px;font-weight:700;color:var(--warn)}
+.slot-empty{color:var(--muted);font-size:12px;padding:14px 0 6px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.slot-empty .ghost{width:64px;height:64px;font-size:24px;border-width:2px}
+.log{background:#06120d;color:#cfe9d6;font-family:var(--f-led);font-size:13px;border-radius:10px;padding:10px 12px;min-height:110px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.log .w{color:#ffd36b}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--counter);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.switch .t{font-weight:700}
+.tog{width:52px;height:30px;border-radius:15px;border:0;background:var(--line);position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .2s}
+.tog[aria-pressed="true"]{background:var(--accent)}
+.tog[aria-pressed="true"]::after{left:25px}
+
+/* 遊び方 */
+dl.kinds{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:14px}
+dl.kinds dt{font-family:var(--f-mono);font-weight:700}
+dl.kinds dd{margin:0;color:var(--muted)}
+
+nav.tabs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:var(--counter);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs button{border:0;background:transparent;padding:9px 0 11px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:1px}
+nav.tabs button .g{display:block;margin-bottom:2px}
+nav.tabs button[aria-selected="true"]{color:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="scroller">
+  <div class="inner">
+    <header class="top">
+      <h1 class="logo"><b>ピッ！</b>とモンスター</h1>
+      <span class="count" id="count"></span>
+    </header>
+
+    <!-- スキャン -->
+    <section id="v-scan" class="view">
+      <div class="scanner">
+        <div class="window" id="win" hidden>
+          <video id="video" playsinline muted hidden></video>
+          <div class="guide" id="guide" hidden></div>
+          <div class="laser"></div>
+        </div>
+        <div class="scanrow">
+          <div class="led" id="led">バーコードで召喚</div>
+          <button class="btn primary" id="scanBtn">スキャン</button>
+        </div>
+      </div>
+      <p class="toast" id="toast" hidden></p>
+      <div id="result"></div>
+      <div class="after" id="after" hidden>
+        <button class="btn" id="shareBtn">結果をシェア</button>
+        <button class="btn" id="againBtn">もう一度スキャン</button>
+      </div>
+      <div class="panel">
+        <label for="code" class="muted">カメラが使えないときは、バーコードの下の数字を入力</label>
+        <div class="field">
+          <input id="code" inputmode="numeric" autocomplete="off" placeholder="4901234567894" maxlength="13">
+          <button class="btn primary" id="codeBtn">ピッ</button>
+        </div>
+        <p class="muted" id="codeMsg"></p>
+      </div>
+      <div class="credit">
+<!-- Begin Yahoo! JAPAN Web Services Attribution Snippet -->
+<span style="margin:15px 15px 15px 15px"><a href="https://developer.yahoo.co.jp/sitemap/">Webサービス by Yahoo! JAPAN</a></span>
+<!-- End Yahoo! JAPAN Web Services Attribution Snippet -->
+      </div>
+    </section>
+
+    <!-- 図鑑 -->
+    <section id="v-dex" class="view" hidden>
+      <h2>図鑑</h2>
+      <p class="muted">同じバーコードなら、だれが読んでも同じモンスター。読むたびにレベルが上がります。</p>
+      <div class="tabs-mini" id="dexSort">
+        <button data-sort="new" aria-pressed="true">新しい順</button>
+        <button data-sort="rar" aria-pressed="false">レア順</button>
+        <button data-sort="lv" aria-pressed="false">レベル順</button>
+      </div>
+      <div class="grid" id="dexGrid"></div>
+      <div id="dexDetail"></div>
+    </section>
+
+    <!-- 対戦 -->
+    <section id="v-battle" class="view" hidden>
+      <h2>対戦</h2>
+      <p class="muted">枠の「スキャン」で呼ぶか、下の図鑑から選びます。友だちと1つずつ持ち寄って読むのもおすすめ。</p>
+      <div class="scanner" id="battleScan" hidden>
+        <div id="bWinHolder"></div>
+        <div class="scanrow">
+          <div class="led" id="bLed">バーコードを枠に入れてください</div>
+          <button class="btn" id="bStop">やめる</button>
+        </div>
+      </div>
+      <div class="arena">
+        <div class="fighter" id="fA"></div>
+        <div class="vs">VS</div>
+        <div class="fighter" id="fB"></div>
+      </div>
+      <p class="note" id="bNote" role="status" hidden></p>
+      <div class="row">
+        <button class="btn primary" id="fightBtn">たたかう</button>
+        <button class="btn" id="clearBtn">選び直す</button>
+      </div>
+      <div class="log" id="log" aria-live="polite"><div>2体そろったら「たたかう」を押してください。</div></div>
+      <p class="muted">図鑑から選ぶ：</p>
+      <div class="grid" id="pickGrid"></div>
+    </section>
+
+    <!-- 遊び方 -->
+    <section id="v-help" class="view" hidden>
+      <h2>遊び方</h2>
+      <div class="panel">
+        <p>お菓子、本、洗剤、文房具。家にある商品のバーコードをスキャンすると、その商品だけのモンスターが召喚されます。</p>
+        <p class="muted">同じバーコードからは、いつ、だれが読んでも同じモンスターが出ます。レアが出たら、商品の名前を添えてシェアしてみてください。</p>
+      </div>
+      <details class="acc" id="sampleAcc">
+        <summary>見本を見る</summary>
+        <div class="acc-body">
+          <p class="muted">バーコード 4901234567894 を読んだときに出るモンスターです。</p>
+          <div id="sampleCard"></div>
+        </div>
+      </details>
+      <div class="panel">
+        <h2>族</h2>
+        <p class="muted">商品のジャンルで族が決まります。族によって、出やすい属性と見た目の特徴が変わります。</p>
+        <dl class="kinds">
+          <dt>おかし族</dt><dd>お菓子。光か炎、羽がある</dd>
+          <dt>のみもの族</dt><dd>飲みもの。水、ひれがある</dd>
+          <dt>ほん族</dt><dd>本。光か影、しおりがある</dd>
+          <dt>でんき族</dt><dd>家電やスマホまわり。雷、アンテナがある</dd>
+          <dt>そのほか</dt><dd>くらし族、ぶんぐ族、きらきら族など全17族</dd>
+          <dt>なぞ族</dt><dd>ジャンルがわからない商品</dd>
+        </dl>
+        <p class="muted">本の裏にある2段目のバーコード（192ではじまる方）は、モンスターになりません。上の段を読んでください。</p>
+        <p class="muted">商品のジャンルは、Yahoo!ショッピングの商品情報で調べています。</p>
+      </div>
+      <div class="panel">
+        <h2>属性</h2>
+        <p class="muted" id="elemHelp"></p>
+      </div>
+      <div class="panel">
+        <h2>データ</h2>
+        <p class="muted">図鑑はこの端末のブラウザの中だけに保存されます。</p>
+        <div class="row" id="resetRow"><button class="btn danger small" id="resetBtn">図鑑をすべて消す</button></div>
+      </div>
+      <div class="credit">
+<!-- Begin Yahoo! JAPAN Web Services Attribution Snippet -->
+<span style="margin:15px 15px 15px 15px"><a href="https://developer.yahoo.co.jp/sitemap/">Webサービス by Yahoo! JAPAN</a></span>
+<!-- End Yahoo! JAPAN Web Services Attribution Snippet -->
+      </div>
+    </section>
+  </div>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-v="scan" aria-selected="true"><svg class="g" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8"/></svg>スキャン</button>
+  <button role="tab" data-v="dex" aria-selected="false"><svg class="g" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>図鑑</button>
+  <button role="tab" data-v="battle" aria-selected="false"><svg class="g" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l9.5 9.5M4 4h3.5L15 11.5M4 4v3.5L11.5 15"/><path d="M20 4l-6 6M20 4h-3.5M20 4v3.5"/><path d="M12 15.5l-4 4M8.5 12l-4 4M5 18.5L3 20.5M15.5 12l4 4M12 15.5l4 4M19 18.5l2 2"/></svg>対戦</button>
+  <button role="tab" data-v="help" aria-selected="false"><svg class="g" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17.2h.01"/></svg>遊び方</button>
+</nav>
+
+<script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
+<script>
+(function(){
+const KEY="pipimon-v1";
+let S={mons:{},info:{},battle:{a:null,b:null},last:null};
+try{const raw=localStorage.getItem(KEY); if(raw) S=Object.assign(S,JSON.parse(raw));}catch(e){}
+if(!S.info) S.info={};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ---------- 乱数 ---------- */
+function hash(str){let h1=0xdeadbeef^str.length,h2=0x41c6ce57^str.length;
+  for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (h2>>>0)^(h1>>>0);}
+function rng(seed){let a=hash(seed)>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+
+/* ---------- バーコード ---------- */
+function checkOK(code){ // EAN-8 / EAN-13
+  if(!/^(\d{8}|\d{13})$/.test(code)) return false;
+  const d=code.split("").map(Number), cd=d.pop(); let s=0;
+  d.reverse().forEach((v,i)=>{s+=v*(i%2===0?3:1);});
+  return (10-s%10)%10===cd;
+}
+function normalize(raw){
+  let c=String(raw).replace(/\D/g,"");
+  if(c.length===12) c="0"+c; // UPC-A
+  return c;
+}
+function kindOf(code){
+  if(code.length===13){
+    if(/^97[89]/.test(code)) return {k:"book",label:"本"};
+    if(/^192/.test(code)) return {k:"price",label:"本の2段目"};
+    if(/^491/.test(code)) return {k:"mag",label:"雑誌"};
+    if(/^4[59]/.test(code)) return {k:"jp",label:"国内の商品"};
+    if(/^2/.test(code)) return {k:"store",label:"お店のシール"};
+    return {k:"intl",label:"海外の商品"};
+  }
+  if(/^[45]/.test(code)) return {k:"jp",label:"国内の商品（短縮）"};
+  if(/^2/.test(code)) return {k:"store",label:"お店のシール"};
+  return {k:"intl",label:"海外の商品（短縮）"};
+}
+
+/* ---------- 族（商品のジャンル） ---------- */
+// elems：出やすい属性（70%）／ends：名前の終わり／trait：見た目の特徴
+const TRIBES={
+  snack:{label:"おかし族",elems:["光","炎"],ends:["ポリ","サク","チョコ","グミ"],trait:"wings"},
+  drink:{label:"のみもの族",elems:["水"],ends:["ゴク","シュワ","ボトル"],trait:"fins"},
+  food:{label:"ごはん族",elems:["森","炎"],ends:["モグ","ムシャ","ゴハン"],trait:"leaf"},
+  book:{label:"ほん族",elems:["光","影"],ends:["ブック","ペイジ","ショカ","リブロ"],trait:"ribbon"},
+  mag:{label:"ざっし族",elems:["雷"],ends:["ジン","ガゴン","ゴウ"],trait:"spikes"},
+  beauty:{label:"きらきら族",elems:["光","水"],ends:["キラ","ルージュ","ツヤ"],trait:"crown"},
+  stationery:{label:"ぶんぐ族",elems:["雷","影"],ends:["ペン","ケシ","ノート"],trait:"antenna"},
+  home:{label:"くらし族",elems:["水","森"],ends:["フキン","アワ","ピカ"],trait:"ears"},
+  tech:{label:"でんき族",elems:["雷"],ends:["ボルト","デンキ","ビット"],trait:"antenna"},
+  play:{label:"あそび族",elems:["影","炎"],ends:["ゲム","コロ","トイ"],trait:"horns"},
+  nature:{label:"いきもの族",elems:["森"],ends:["ワン","ニャ","ハッパ"],trait:"ears"},
+  active:{label:"かつどう族",elems:["炎"],ends:["ダッシュ","キャンプ","ギア"],trait:"horns"},
+  fashion:{label:"おしゃれ族",elems:["光","影"],ends:["ルック","モード"],trait:"crown"},
+  health:{label:"げんき族",elems:["森","水"],ends:["ゲンキ","ビタ"],trait:"leaf"},
+  media:{label:"えんため族",elems:["影","光"],ends:["シネマ","ビート"],trait:"spikes"},
+  sticker:{label:"シール族",elems:null,ends:["シール","ネビキ","ハンガク"],trait:"none"},
+  mystery:{label:"なぞ族",elems:null,ends:["ン","ラ","ドン","ピー","ゴン","リン","マル","ボー","スケ","ッチ"],trait:"none"}
+};
+const GENRE_RULES=[ // 上から順に当てはめる
+  [/菓子|スイーツ|おやつ|チョコ|スナック|キャンディ|ガム/,"snack"],
+  [/ドリンク|飲料|お酒|ビール|ワイン|日本酒|焼酎|コーヒー|お茶|ジュース/,"drink"],
+  [/本、|書籍|雑誌|コミック/,"book"],
+  [/コスメ|美容|ヘアケア|香水|スキンケア/,"beauty"],
+  [/日用|キッチン|洗剤|掃除|バス用品|トイレ|台所/,"home"],
+  [/文具|文房具|事務用品|筆記/,"stationery"],
+  [/家電|スマホ|タブレット|パソコン|テレビ|オーディオ|カメラ/,"tech"],
+  [/ゲーム|おもちゃ|ホビー|玩具/,"play"],
+  [/ペット|生き物|花|ガーデニング/,"nature"],
+  [/スポーツ|アウトドア|釣り|車|バイク|自転車|DIY|工具/,"active"],
+  [/ファッション|バッグ|靴|腕時計|アクセサリー/,"fashion"],
+  [/ダイエット|健康|医薬|サプリ/,"health"],
+  [/CD|音楽|DVD|映像|楽器/,"media"],
+  [/食品/,"food"]
+];
+function tribeFromPath(path){ // いちばん細かいジャンルから順に見る
+  const p=(path||[]).slice().reverse();
+  for(const level of p) for(const [re,k] of GENRE_RULES) if(re.test(level)) return k;
+  return "mystery";
+}
+function tribeOf(code){ // 族と、表示するジャンル
+  const k=kindOf(code).k;
+  if(k==="book") return {key:"book",path:["本"]};
+  if(k==="mag") return {key:"mag",path:["雑誌"]};
+  if(k==="store") return {key:"sticker",path:["お店のシール"]};
+  const info=S.info[code];
+  if(info&&info.found) return {key:tribeFromPath(info.path),path:info.path};
+  return {key:"mystery",path:null};
+}
+let backend=null; // null=まだ不明／true=商品を調べられる／false=調べられない（試作の画面など）
+async function lookup(code){ // "ok" か "error"
+  const k=kindOf(code).k;
+  if(k!=="jp"&&k!=="intl") return "ok";      // 本・雑誌・シールは番号だけでわかる
+  if(S.info[code]) return "ok";              // 一度調べたものはこの端末に覚えておく
+  if(backend===false) return "ok";
+  for(let i=0;i<2;i++){
+    try{
+      const res=await fetch("/api/jan?code="+code,{headers:{accept:"application/json"}});
+      const json=(res.headers.get("content-type")||"").includes("json")? await res.json():null;
+      if(!json||json.error==="noappid"){ backend=false; return "ok"; }
+      backend=true;
+      if(json.error==="busy"){ await new Promise(r=>setTimeout(r,1200)); continue; }
+      if(json.error) return "error";
+      S.info[code]={found:!!json.found,path:json.path||null}; save(); return "ok";
+    }catch(e){ if(backend===null){ backend=false; return "ok"; } return "error"; }
+  }
+  return "error";
+}
+
+/* ---------- モンスター ---------- */
+const ELEM=[
+  {k:"炎",c:"#e0532c",beats:"森"},{k:"水",c:"#2f7fe0",beats:"炎"},{k:"雷",c:"#c99a00",beats:"水"},
+  {k:"森",c:"#3c9a5a",beats:"雷"},{k:"影",c:"#7550c8",beats:"光"},{k:"光",c:"#e07fa8",beats:"影"}];
+const E=k=>ELEM.find(e=>e.k===k);
+const weakTo=k=>ELEM.filter(e=>e.beats===k).map(e=>e.k);
+const SYL=["ピ","ポ","カ","ザ","モ","ル","ド","ガ","ニ","ョ","ラ","ペ","ク","ズ","ノ","ミ","バ","ゴ","チ","タ","フ","ヌ","メ","ジ"];
+function makeMon(code){
+  const r=rng("pipi:"+code), kind=kindOf(code), tb=tribeOf(code), T=TRIBES[tb.key];
+  const roll=r();
+  let rar=roll<.03?5:roll<.13?4:roll<.35?3:roll<.65?2:1;
+  if(tb.key==="sticker" && rar<5 && r()<.5) rar++; // シールはちょっと得
+  let el=pick(r,ELEM);
+  if(T.elems && r()<.7) el=E(pick(r,T.elems));
+  let name=""; const n=1+Math.floor(r()*2);
+  for(let i=0;i<n;i++) name+=pick(r,SYL);
+  name+=pick(r,T.ends);
+  const base=0.75+rar*0.18;
+  const st={hp:Math.round((70+r()*50)*base),atk:Math.round((20+r()*20)*base),def:Math.round((12+r()*18)*base),spd:Math.round((10+r()*25)*base)};
+  return {code,name,rar,el,st,kind,tribe:{key:tb.key,label:T.label,path:tb.path,trait:T.trait}};
+}
+function withLevel(m){
+  const d=S.mons[m.code]; const lv=d?Math.min(99,d.taps):1; const k=1+(lv-1)*0.08;
+  return Object.assign({},m,{lv,s:{hp:Math.round(m.st.hp*k),atk:Math.round(m.st.atk*k),def:Math.round(m.st.def*k),spd:Math.round(m.st.spd*k)}});
+}
+function shade(hex,amt){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,Math.round(amt<0?v*(1+amt):v+(255-v)*amt)));
+  return "#"+((1<<24)|(f(n>>16)<<16)|(f(n>>8&255)<<8)|f(n&255)).toString(16).slice(1);}
+function addTrait(g,N,trait){ // 族ごとの見た目の特徴（頭の上・体のわき）
+  const set=(y,x,v,mirror=true)=>{ if(y<0||y>=N) return; g[y][x]=v; if(mirror) g[y][N-1-x]=v; };
+  const fill=(y,x)=>{ if(y>=0&&y<N&&!g[y][x]){ g[y][x]=1; g[y][N-1-x]=1; } };
+  let top=2; for(let y=0;y<N;y++){ if(g[y][5]){ top=y; break; } } top=Math.max(top,2);
+  switch(trait){
+    case "horns": set(top-2,3,5); set(top-1,3,5); fill(top,3); break;
+    case "ears": set(top-1,2,1); set(top-2,2,1); set(top-1,3,1); fill(top,2); fill(top,3); break;
+    case "antenna": set(top-2,5,2); set(top-1,5,5); break;
+    case "leaf": set(top-1,5,6); set(top-2,4,6); set(top-2,5,6); break;
+    case "crown": set(top-1,3,7); set(top-1,4,7); set(top-1,5,7); set(top-2,3,7); set(top-2,5,7); break;
+    case "spikes": set(top-1,2,5); set(top-1,4,5); fill(top,2); fill(top,4); break;
+    case "ribbon": set(top-1,7,8,false); set(top,7,8,false); set(top+1,7,8,false); break;
+    case "wings": set(4,0,2); set(5,0,2); set(5,1,2); set(6,1,2); break;
+    case "fins": set(6,0,2); set(7,0,2); set(7,1,2); break;
+  }
+}
+function drawMon(cv,code){
+  const m=makeMon(code), r=rng("sprite:"+code), N=12, P=1, px=4;
+  cv.width=(N+P*2)*px; cv.height=(N+P*2)*px;
+  const ctx=cv.getContext("2d"); ctx.clearRect(0,0,cv.width,cv.height);
+  const g=Array.from({length:N},()=>Array(N).fill(0));
+  for(let y=0;y<N;y++) for(let x=0;x<N/2;x++){
+    const dc=(N/2-1)-x; let p=0.62-dc*0.09;
+    if(y<1||y>N-2) p-=0.35; if(y>=3&&y<=8) p+=0.18; if(dc===0&&y>=2&&y<=9) p=0.95;
+    if(r()<p){const v=r()<0.22?2:1; g[y][x]=v; g[y][N-1-x]=v;}
+  }
+  const ey=3+Math.floor(r()*2), ex=3+Math.floor(r()*2);
+  for(const x of [ex,N-1-ex]){g[ey][x]=3; g[ey+1][x]=4;}
+  addTrait(g,N,m.tribe.trait);
+  const col={1:m.el.c,2:shade(m.el.c,.45),3:"#ffffff",4:"#1d1f22",5:shade(m.el.c,-.3),6:"#4caf50",7:"#e2a200",8:"#d8432a"}, out=shade(m.el.c,-.55);
+  for(let y=0;y<N;y++) for(let x=0;x<N;x++){ if(g[y][x]) continue;
+    if([[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>g[y+dy]&&g[y+dy][x+dx])){ctx.fillStyle=out;ctx.fillRect((x+P)*px,(y+P)*px,px,px);} }
+  for(let y=0;y<N;y++) for(let x=0;x<N;x++){const v=g[y][x]; if(!v) continue; ctx.fillStyle=col[v]; ctx.fillRect((x+P)*px,(y+P)*px,px,px);}
+}
+
+/* ---------- 表示 ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const stars=n=>"★".repeat(n)+"☆".repeat(5-n);
+function cardHTML(code,o){
+  o=o||{}; const m=withLevel(makeMon(code)); const d=S.mons[code]||{taps:0,wins:0,losses:0};
+  const row=(label,v)=>`<span>${label}</span><span class="bar"><i style="width:${Math.min(100,v/260*100)}%"></i></span><b>${v}</b>`;
+  return `<article class="mcard${o.summon?" summon":""}" style="--el:${m.el.c}">
+    <div class="stage">
+      <span class="stars" aria-label="レア度${m.rar}">${stars(m.rar)}</span>
+      <span class="elem chip" style="background:${m.el.c}">${m.el.k}属性</span>
+      <span class="floor"></span>
+      <canvas data-mon="${esc(code)}" aria-label="${esc(m.name)}の姿"></canvas>
+      ${o.isNew?'<span class="newb">NEW</span>':""}
+      ${o.sample?'<span class="sample">見本</span>':""}
+    </div>
+    <div class="mbody">
+      <div class="mhead"><span class="mname">${esc(m.name)}</span><span class="mlv">Lv ${m.lv}</span></div>
+      <div class="mfrom"><b class="tribe">${esc(m.tribe.label)}</b>　${esc(m.tribe.path?m.tribe.path.join(" › "):m.kind.label)}　${esc(code)}</div>
+      <div class="sbars">${row("HP",m.s.hp)}${row("こうげき",m.s.atk)}${row("ぼうぎょ",m.s.def)}${row("すばやさ",m.s.spd)}</div>
+      <div class="mfoot"><span>つよい <b>${m.el.beats}</b>　よわい <b>${weakTo(m.el.k).join("・")}</b></span><span>${d.taps}回召喚　${d.wins||0}勝${d.losses||0}敗</span></div>
+    </div>
+  </article>`;
+}
+function paint(root){(root||document).querySelectorAll("canvas[data-mon]").forEach(cv=>drawMon(cv,cv.dataset.mon));}
+function led(t,alert){const el=$("#led"); el.textContent=t; el.classList.toggle("alert",!!alert);}
+let toastT; function toast(t){const el=$("#toast"); el.textContent=t; el.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>el.hidden=true,4500);}
+let actx=null;
+function beep(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.type="square"; o.frequency.value=2200; g.gain.value=.06;
+  o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+.11);}catch(e){}}
+
+/* ---------- 召喚 ---------- */
+function validate(raw,say){
+  const code=normalize(raw);
+  if(!(code.length===8||code.length===13)||!checkOK(code)){ say("読み取れませんでした",true); return null; }
+  if(kindOf(code).k==="price"){ say("本の上の段（978）を読んでください",true); return null; }
+  return code;
+}
+let busy=false;
+async function register(raw,say){ // 商品を調べてから図鑑に記録。だめなら null
+  const code=validate(raw,say); if(!code) return null;
+  if(busy) return null; busy=true;
+  if(!S.info[code]&&backend!==false&&/^(jp|intl)$/.test(kindOf(code).k)) say("ピッ　商品を調べています…");
+  const st=await lookup(code); busy=false;
+  if(st!=="ok"){ say("商品を調べられませんでした。少ししてもう一度",true); return null; }
+  const isNew=!S.mons[code];
+  const d=S.mons[code]||(S.mons[code]={taps:0,wins:0,losses:0,first:Date.now()});
+  d.taps++; d.last=Date.now(); S.last=code;
+  beep(); save(); renderCount();
+  return {code,isNew,m:withLevel(makeMon(code))};
+}
+async function summonToSlot(raw,slot){
+  const other=slot==="a"?S.battle.b:S.battle.a;
+  if(normalize(raw)===other){ bNote("同じモンスターどうしは戦えません"); return false; }
+  const r=await register(raw,(t)=>bNote(t)); if(!r) return false;
+  S.battle[slot]=r.code; save(); renderBattle();
+  logAdd(`${r.m.name}（Lv${r.m.lv}）が来た！${r.isNew?"　図鑑に登録":""}`);
+  if(S.battle.a&&S.battle.b) logAdd("「たたかう」を押してください","w");
+  return true;
+}
+async function summon(raw){
+  const r=await register(raw,led); if(!r) return false;
+  const {code,isNew,m}=r;
+  show("scan");
+  led(isNew?"ピッ　新しいモンスター":`ピッ　Lv ${m.lv} になりました`);
+  toast(isNew?`${m.name}（${stars(m.rar)}）が出てきた！`:`${m.name} のレベルが ${m.lv} に上がった`);
+  $("#result").innerHTML=cardHTML(code,{summon:true,isNew}); paint($("#result")); $("#after").hidden=false;
+  setTimeout(()=>$("#result").scrollIntoView({behavior:"smooth",block:"start"}),150);
+  return true;
+}
+function emptyHTML(){
+  return `<article class="mcard empty"><div class="stage"><span class="ghost" aria-hidden="true">？</span></div>
+    <div class="mbody"><span class="mname">まだ召喚していません</span><span class="muted">お菓子や本のバーコードをスキャンすると、ここに出てきます</span></div></article>`;
+}
+function renderSample(){ $("#sampleCard").innerHTML=cardHTML("4901234567894",{sample:true}); paint($("#sampleCard")); }
+$("#sampleAcc").addEventListener("toggle",()=>{ if($("#sampleAcc").open) renderSample(); });
+function renderIdle(){
+  if(S.last&&S.mons[S.last]){ $("#result").innerHTML=cardHTML(S.last); $("#after").hidden=false; }
+  else { $("#result").innerHTML=emptyHTML(); $("#after").hidden=true; }
+  paint($("#result"));
+}
+
+/* ---------- カメラ ---------- */
+let scanning=false, stream=null, zx=null, loopT=null, target="summon";
+let bNoteT=null;
+function bNote(t){ // 対戦タブの一時メッセージ。表示中なら出し直さない
+  const el=$("#bNote"); if(!el.hidden&&el.textContent===t) return;
+  el.textContent=t; el.hidden=false; clearTimeout(bNoteT); bNoteT=setTimeout(()=>{el.hidden=true;},4000);
+}
+function bLed(t,alert){const el=$("#bLed"); el.textContent=t; el.classList.toggle("alert",!!alert);}
+const video=$("#video");
+function setWin(on){ const w=$("#win"); w.hidden=!on; w.classList.toggle("on",on); video.hidden=!on; $("#guide").hidden=!on;
+  $("#scanBtn").textContent=on&&target==="summon"?"やめる":"スキャン";
+  $("#battleScan").hidden=!(on&&target!=="summon"); }
+async function startScan(t){
+  if(scanning) return; target=t||"summon"; beep(); // 音をこの操作で許可しておく
+  const say=target==="summon"?led:bLed;
+  // カメラの窓を、いまのタブに置く
+  if(target==="summon") $("#v-scan .scanner").prepend($("#win")); else $("#bWinHolder").appendChild($("#win"));
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ say("このブラウザはカメラが使えません",true); return; }
+  scanning=true; setWin(true);
+  say(target==="summon"?"バーコードを枠に入れてください":(target==="a"?"左の枠に呼ぶモンスターをスキャン":"右の枠に呼ぶモンスターをスキャン"));
+  const onCode=(txt)=>{ const c=normalize(txt); if(!checkOK(c)) return; const tg=target; stopScan(); const w=$("#win"); w.classList.remove("flash"); void w.offsetWidth; w.classList.add("flash"); if(tg==="summon") summon(c); else summonToSlot(c,tg); };
+  try{
+    if("BarcodeDetector" in window){
+      let fm=["ean_13","ean_8","upc_a","upc_e"];
+      try{const sup=await BarcodeDetector.getSupportedFormats(); fm=fm.filter(f=>sup.includes(f));}catch(e){}
+      const det=new BarcodeDetector({formats:fm});
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+      video.srcObject=stream; await video.play();
+      const tick=async()=>{ if(!scanning) return; try{const res=await det.detect(video); if(res&&res.length){onCode(res[0].rawValue); return;}}catch(e){} loopT=setTimeout(tick,180); };
+      tick();
+    } else if(window.ZXing){
+      const hints=new Map(); const F=ZXing.BarcodeFormat;
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E]);
+      zx=new ZXing.BrowserMultiFormatReader(hints);
+      await zx.decodeFromConstraints({video:{facingMode:{ideal:"environment"}},audio:false},video,(res)=>{ if(res&&scanning) onCode(res.getText()); });
+    } else { throw new Error("nolib"); }
+  }catch(e){
+    const tg=target; stopScan();
+    if(tg==="summon"){ led(e&&e.name==="NotAllowedError"?"カメラが許可されていません":"カメラを起動できませんでした",true); toast("下の欄にバーコードの数字を入れても遊べます"); }
+    else { bNote(e&&e.name==="NotAllowedError"?"カメラが許可されていません。図鑑から選んでも戦えます。":"カメラを起動できませんでした。図鑑から選んでも戦えます。"); }
+  }
+}
+function stopScan(){
+  scanning=false; clearTimeout(loopT);
+  try{ if(zx){ zx.reset(); zx=null; } }catch(e){}
+  try{ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }catch(e){}
+  try{ video.srcObject=null; }catch(e){}
+  setWin(false);
+}
+$("#scanBtn").addEventListener("click",()=>scanning?stopScan():startScan("summon"));
+$("#bStop").addEventListener("click",()=>stopScan());
+$("#againBtn").addEventListener("click",()=>{ $("#scroller").scrollTop=0; startScan("summon"); });
+document.addEventListener("visibilitychange",()=>{ if(document.hidden&&scanning) stopScan(); });
+
+/* 手入力 */
+function codeSubmit(){
+  const v=normalize($("#code").value);
+  if(!(v.length===8||v.length===13)){ $("#codeMsg").textContent="8けたか13けたの数字を入れてください。"; return; }
+  if(!checkOK(v)){ $("#codeMsg").textContent="番号が合いません。最後の1けたまで見直してください。"; return; }
+  $("#codeMsg").textContent=""; $("#code").value=""; summon(v);
+}
+$("#codeBtn").addEventListener("click",codeSubmit);
+$("#code").addEventListener("keydown",e=>{ if(e.key==="Enter") codeSubmit(); });
+
+/* シェア */
+$("#shareBtn").addEventListener("click",async()=>{
+  if(!S.last) return; const m=withLevel(makeMon(S.last));
+  const text=`バーコードをピッしたら ${stars(m.rar)} の「${m.name}」（${m.el.k}属性・Lv${m.lv}）が出てきた`;
+  const url=location.href.split("#")[0];
+  try{ if(navigator.share){ await navigator.share({text,url}); return; } }catch(e){ if(e&&e.name==="AbortError") return; }
+  try{ await navigator.clipboard.writeText(text+" "+url); toast("シェア用の文をコピーしました"); }catch(e){ toast(text); }
+});
+
+/* ---------- 図鑑 ---------- */
+function renderCount(){ $("#count").textContent=`図鑑 ${Object.keys(S.mons).length}体`; }
+function cellHTML(code,sel){const m=withLevel(makeMon(code));
+  return `<button class="cell${sel?" sel":""}" data-code="${esc(code)}"><canvas data-mon="${esc(code)}"></canvas><span class="n">${esc(m.name)}</span><span class="s">${"★".repeat(m.rar)} Lv${m.lv}</span></button>`;}
+let dexSort="new";
+function sortedCodes(){
+  const ids=Object.keys(S.mons);
+  if(dexSort==="rar") return ids.sort((a,b)=>makeMon(b).rar-makeMon(a).rar||S.mons[b].taps-S.mons[a].taps);
+  if(dexSort==="lv") return ids.sort((a,b)=>S.mons[b].taps-S.mons[a].taps);
+  return ids.sort((a,b)=>(S.mons[b].first||0)-(S.mons[a].first||0));
+}
+function renderDex(){
+  const ids=sortedCodes();
+  $("#dexGrid").innerHTML=ids.length?ids.map(c=>cellHTML(c)).join(""):`<div class="empty">まだ空っぽです。スキャンタブで、家にある商品を読んでみてください。</div>`;
+  $("#dexDetail").innerHTML=""; paint($("#dexGrid"));
+}
+$("#dexSort").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; dexSort=b.dataset.sort;
+  $("#dexSort").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false")); renderDex();});
+$("#dexGrid").addEventListener("click",e=>{const c=e.target.closest(".cell"); if(!c) return;
+  $("#dexGrid").querySelectorAll(".cell").forEach(x=>x.classList.toggle("sel",x===c));
+  $("#dexDetail").innerHTML=cardHTML(c.dataset.code); paint($("#dexDetail"));
+  $("#dexDetail").scrollIntoView({behavior:"smooth",block:"nearest"});});
+
+/* ---------- 対戦 ---------- */
+function fighterHTML(code,hp,max){
+  return code? filledHTML(code,hp,max) : `<div class="slot-empty"><span class="ghost" aria-hidden="true">？</span><button class="btn primary small" data-slot="${slotOf}">スキャン</button></div>`;
+}
+let slotOf="a";
+function filledHTML(code,hp,max){
+  const m=withLevel(makeMon(code)); hp=hp==null?m.s.hp:hp; max=max||m.s.hp; const pct=Math.max(0,hp/max*100);
+  return `<canvas data-mon="${esc(code)}"></canvas><div class="n">${esc(m.name)}</div>
+    <span class="chip" style="background:${m.el.c}">${m.el.k}・Lv${m.lv}</span>
+    <div class="hp"><i class="${pct<30?"low":""}" style="width:${pct}%"></i></div><div class="hpn">${Math.max(0,hp)} / ${max}</div>`;
+}
+function renderBattle(){
+  slotOf="a"; $("#fA").innerHTML=fighterHTML(S.battle.a); slotOf="b"; $("#fB").innerHTML=fighterHTML(S.battle.b); paint($("#fA")); paint($("#fB"));
+  const ids=sortedCodes();
+  $("#pickGrid").innerHTML=ids.length?ids.map(c=>cellHTML(c,c===S.battle.a||c===S.battle.b)).join(""):`<div class="empty">図鑑にモンスターがいません。</div>`;
+  paint($("#pickGrid"));
+}
+function logReset(t){$("#log").innerHTML=`<div>${esc(t)}</div>`;}
+function logAdd(t,cls){const d=document.createElement("div"); if(cls) d.className=cls; d.textContent=t; $("#log").appendChild(d); $("#log").scrollTop=1e6;}
+let fighting=false;
+function runBattle(){
+  if(fighting) return; const {a,b}=S.battle;
+  if(!a||!b){logReset("2体そろうと戦えます。"); return;}
+  if(a===b){logReset("同じモンスター同士では戦えません。"); S.battle.b=null; save(); renderBattle(); return;}
+  fighting=true;
+  const A=withLevel(makeMon(a)), B=withLevel(makeMon(b)), hp={a:A.s.hp,b:B.s.hp}, r=rng(a+b+Date.now());
+  const mult=(x,y)=>x.el.beats===y.el.k?1.5:y.el.beats===x.el.k?0.7:1;
+  logReset(`${A.name} と ${B.name} の勝負！`);
+  let turn=A.s.spd>=B.s.spd?"a":"b", rounds=0;
+  const fast=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const step=()=>{
+    const atk=turn==="a"?A:B, def=turn==="a"?B:A, dk=turn==="a"?"b":"a", crit=r()<0.1, mu=mult(atk,def);
+    const dmg=Math.round(Math.max(3,atk.s.atk*mu*(0.85+r()*0.3)-def.s.def*0.45)*(crit?1.6:1));
+    hp[dk]-=dmg;
+    logAdd(`${atk.name} のこうげき！ ${dmg}ダメージ${crit?"（会心）":""}${mu>1?"　こうかばつぐん":mu<1?"　いまひとつ":""}`);
+    const fEl=dk==="a"?$("#fA"):$("#fB"), mon=dk==="a"?A:B;
+    fEl.innerHTML=fighterHTML(mon.code,hp[dk],mon.s.hp); paint(fEl); fEl.classList.remove("hurt"); void fEl.offsetWidth; fEl.classList.add("hurt");
+    rounds++;
+    if(hp[dk]<=0||rounds>=40){
+      const win=hp[dk]<=0?atk:(hp.a/A.s.hp>=hp.b/B.s.hp?A:B), lose=win===A?B:A;
+      S.mons[win.code].wins=(S.mons[win.code].wins||0)+1; S.mons[lose.code].losses=(S.mons[lose.code].losses||0)+1; save();
+      logAdd(`${win.name} の勝ち！`,"w"); fighting=false; return;
+    }
+    turn=dk; setTimeout(step,fast?60:750);
+  };
+  setTimeout(step,fast?60:600);
+}
+$("#fightBtn").addEventListener("click",()=>{renderBattle(); runBattle();});
+$("#clearBtn").addEventListener("click",()=>{if(fighting) return; if(scanning) stopScan(); S.battle.a=null; S.battle.b=null; save(); renderBattle(); logReset("2体えらんでください。");});
+$(".arena").addEventListener("click",e=>{ const b=e.target.closest("[data-slot]"); if(!b||fighting) return; startScan(b.dataset.slot); });
+$("#pickGrid").addEventListener("click",e=>{ if(fighting) return; const c=e.target.closest(".cell"); if(!c) return; const id=c.dataset.code;
+  if(S.battle.a===id) S.battle.a=null; else if(S.battle.b===id) S.battle.b=null;
+  else if(!S.battle.a) S.battle.a=id; else if(!S.battle.b) S.battle.b=id; else {S.battle.a=S.battle.b; S.battle.b=id;}
+  save(); renderBattle(); });
+
+/* ---------- 遊び方・データ ---------- */
+$("#elemHelp").innerHTML=ELEM.map(e=>`<span class="chip" style="background:${e.c}">${e.k}</span> は ${e.beats} につよい`).join("<br>");
+$("#resetRow").addEventListener("click",e=>{
+  if(e.target.id==="resetBtn") $("#resetRow").innerHTML=`<span class="muted" style="align-self:center">図鑑がすべて消えます。</span><button class="btn danger small" id="resetYes">消す</button><button class="btn small" id="resetNo">やめる</button>`;
+  if(e.target.id==="resetYes"){ S={mons:{},info:{},battle:{a:null,b:null},last:null}; save(); renderCount(); renderIdle(); $("#resetRow").innerHTML=`<p class="muted">消しました。</p>`; }
+  if(e.target.id==="resetNo") $("#resetRow").innerHTML=`<button class="btn danger small" id="resetBtn">図鑑をすべて消す</button>`;
+});
+
+/* ---------- タブ ---------- */
+function show(v){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v?"true":"false"));
+  ["scan","dex","battle","help"].forEach(k=>$("#v-"+k).hidden=k!==v);
+  if(v!=="scan"&&scanning) stopScan();
+  if(v==="dex") renderDex(); if(v==="battle") renderBattle();
+  $("#scroller").scrollTop=0;
+}
+document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target.closest("button"); if(b) show(b.dataset.v);});
+
+renderCount(); renderIdle();
+})();
+</script>
+
+</body>
+</html>

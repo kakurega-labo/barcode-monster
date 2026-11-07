@@ -31,29 +31,24 @@ async function jan(url, env) {
   if (env.DB) {
     try {
       await env.DB.prepare("CREATE TABLE IF NOT EXISTS jan (code TEXT PRIMARY KEY, data TEXT NOT NULL, at INTEGER NOT NULL)").run();
-      const row = await env.DB.prepare("SELECT data FROM jan WHERE code = ?").bind(code).first();
-      if (row) return json(JSON.parse(row.data));
+      const row = await env.DB.prepare("SELECT data, at FROM jan WHERE code = ?").bind(code).first();
+      if (row) {
+        const data = JSON.parse(row.data);
+        // 見つからなかった商品は、7日たったら調べ直す（あとから出品されることがあるため）
+        if (data.found || Date.now() - row.at < 7 * 864e5) return json(data);
+      }
     } catch (e) { /* 覚えられなくても、調べるのは続ける */ }
   }
 
-  // 2. Yahoo! に聞く
+  // 2. Yahoo! に聞く（JANコードで探し、なければ番号そのものを検索語にしてもう一度）
   if (!env.YAHOO_APPID) return json({ error: "noappid" }, 503);
-  const wait = lastCall + 1050 - Date.now();
-  if (wait > 0) await new Promise((r) => setTimeout(r, Math.min(wait, 1100)));
-  lastCall = Date.now();
-
-  let res;
-  try {
-    const q = new URLSearchParams({ appid: env.YAHOO_APPID, jan_code: code, results: "10" });
-    res = await fetch(`${YAHOO}?${q}`, { signal: AbortSignal.timeout(5000) });
-  } catch (e) {
-    return json({ error: "network" }, 502);
+  let result;
+  for (const by of ["jan_code", "query"]) {
+    const r = await ask(env.YAHOO_APPID, by, code);
+    if (r.error) return json({ error: r.error }, r.error === "busy" ? 503 : 502);
+    result = pickGenre(r.hits);
+    if (result.found) break;
   }
-  if (res.status === 429) return json({ error: "busy" }, 503);
-  if (!res.ok) return json({ error: "yahoo" }, 502);
-
-  const data = await res.json();
-  const result = pickGenre(data.hits || []);
 
   // 3. 覚えておく（見つからなかった商品も覚える）
   if (env.DB) {
@@ -63,6 +58,23 @@ async function jan(url, env) {
     } catch (e) {}
   }
   return json(result);
+}
+
+async function ask(appid, by, code) {
+  const wait = lastCall + 1050 - Date.now();
+  if (wait > 0) await new Promise((r) => setTimeout(r, Math.min(wait, 1100)));
+  lastCall = Date.now();
+  let res;
+  try {
+    const q = new URLSearchParams({ appid, [by]: code, results: "10" });
+    res = await fetch(`${YAHOO}?${q}`, { signal: AbortSignal.timeout(5000) });
+  } catch (e) {
+    return { error: "network" };
+  }
+  if (res.status === 429) return { error: "busy" };
+  if (!res.ok) return { error: "yahoo" };
+  const data = await res.json();
+  return { hits: data.hits || [] };
 }
 
 // 出品ごとにジャンルの付け方が少しずつ違うので、いちばん多いジャンルを選ぶ。

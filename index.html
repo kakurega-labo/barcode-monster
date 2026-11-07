@@ -140,8 +140,9 @@ details.acc .acc-body{padding:0 14px 14px;display:flex;flex-direction:column;gap
 .tabs-mini button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 /* 対戦 */
-.arena{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
-.fighter{background:var(--counter);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-align:center}
+.arena{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:stretch}
+.arena .vs{align-self:center}
+.fighter{background:var(--counter);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;height:212px;text-align:center}
 .fighter canvas{width:80px;height:80px;image-rendering:pixelated}
 .fighter.hurt canvas{animation:shake .3s}
 @keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
@@ -152,11 +153,43 @@ details.acc .acc-body{padding:0 14px 14px;display:flex;flex-direction:column;gap
 .hp i.low{background:var(--warn)}
 .hpn{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
 .vs{font-family:var(--f-led);font-size:20px;color:var(--scan)}
-.credit{text-align:center;font-size:12px;padding-top:8px}
+.credit{text-align:center;font-size:12px}
+#v-scan .credit{margin-top:-8px}
+.bhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.tries{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
+.boss{--el:#888;position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);padding:14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;
+  background:radial-gradient(circle at 22% 50%,color-mix(in srgb,var(--el) 50%,transparent) 0,color-mix(in srgb,var(--el) 14%,transparent) 40%,transparent 70%),var(--counter)}
+.boss canvas{width:120px;height:120px;image-rendering:pixelated;filter:drop-shadow(0 6px 6px rgba(0,0,0,.3))}
+.boss.hurt canvas,.me.hurt canvas{animation:shake .3s}
+.boss.down canvas{filter:grayscale(1) brightness(.6)}
+.binfo{min-width:0;display:flex;flex-direction:column;gap:6px}
+.bname{font-family:var(--f-led);font-size:22px;line-height:1.2;word-break:break-all}
+.bsub{font-size:12px;color:var(--muted)}
+.intent{font-family:var(--f-led);font-size:14px;background:#06120d;color:#ffd36b;border-radius:10px;padding:9px 12px;min-height:40px;display:flex;align-items:center}
+.intent.calm{color:#cfe9d6}
+.me{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;background:var(--counter);border:1px solid var(--line);border-radius:14px;padding:10px 14px;min-height:108px}
+.me canvas{width:84px;height:84px;image-rendering:pixelated}
+.me.empty{grid-template-columns:auto minmax(0,1fr)}
+.me .ghost{width:72px;height:72px;font-size:26px}
+.charged{font-size:11px;font-weight:700;color:#e2a200}
+.acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.act{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:12px;border:1px solid var(--line);background:var(--counter);font-weight:700;font-size:15px}
+.act small{font-weight:400;font-size:11px;color:var(--muted);line-height:1.35;text-align:center}
+.act.hot{border-color:#e2a200;box-shadow:0 0 0 1px #e2a200 inset}
+.act:disabled{opacity:.5}
+.turn{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:center;margin-bottom:6px}
+.res{display:flex;flex-direction:column;gap:10px;text-align:center}
+.res .big{font-family:var(--f-led);font-size:24px}
+.res .big.win{color:var(--ok)}
+.res .big.lose{color:var(--warn)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
 .note{margin:0;text-align:center;font-size:13px;font-weight:700;color:var(--warn)}
 .slot-empty{color:var(--muted);font-size:12px;padding:14px 0 6px;display:flex;flex-direction:column;align-items:center;gap:8px}
 .slot-empty .ghost{width:64px;height:64px;font-size:24px;border-width:2px}
-.log{background:#06120d;color:#cfe9d6;font-family:var(--f-led);font-size:13px;border-radius:10px;padding:10px 12px;min-height:110px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.log{background:#06120d;color:#cfe9d6;font-family:var(--f-led);font-size:13px;line-height:1.6;border-radius:10px;padding:10px 12px;height:calc(4 * 1.6em + 3 * 2px + 20px);overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.log > div{flex:none}
 .log .w{color:#ffd36b}
 .switch{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--counter);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .switch .t{font-weight:700}
@@ -222,21 +255,16 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
 
     <!-- 対戦 -->
     <section id="v-battle" class="view" hidden>
-      <h2>対戦</h2>
-      <p class="muted">枠の「スキャン」で呼ぶか、下の図鑑から選びます。友だちと1つずつ持ち寄って読むのもおすすめ。</p>
-      <div class="arena">
-        <div class="fighter" id="fA"></div>
-        <div class="vs">VS</div>
-        <div class="fighter" id="fB"></div>
+      <div class="bhead"><h2>きょうのボス</h2><span class="tries" id="tries"></span></div>
+      <article class="boss" id="bossCard"></article>
+      <div class="intent" id="intent"></div>
+      <div class="me" id="meCard"></div>
+      <div id="actions"></div>
+      <div class="log" id="log" aria-live="polite"></div>
+      <div id="pickArea" class="view" style="gap:8px">
+        <p class="muted">図鑑から選ぶ：</p>
+        <div class="grid" id="pickGrid"></div>
       </div>
-      <p class="note" id="bNote" role="status" hidden></p>
-      <div class="row">
-        <button class="btn primary" id="fightBtn">たたかう</button>
-        <button class="btn" id="clearBtn">選び直す</button>
-      </div>
-      <div class="log" id="log" aria-live="polite"><div>2体そろったら「たたかう」を押してください。</div></div>
-      <p class="muted">図鑑から選ぶ：</p>
-      <div class="grid" id="pickGrid"></div>
     </section>
 
     <!-- 遊び方 -->
@@ -268,13 +296,15 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
         <p class="muted">商品のジャンルは、Yahoo!ショッピングの商品情報で調べています。</p>
       </div>
       <div class="panel">
-        <h2>対戦</h2>
-        <p class="muted">勝つと、はじめて倒した相手1体ごとにレベルが1上がります。同じ相手に何度勝っても上がりません。</p>
+        <h2>きょうのボス</h2>
+        <p class="muted">毎日ちがうボスが1体、だれのところにも同じボスが出ます。手持ちのモンスター1体で、1日3回まで挑戦できます。</p>
         <dl class="kinds">
-          <dt>3体</dt><dd>称号「つわもの」</dd>
-          <dt>10体</dt><dd>称号「チャンピオン」</dd>
-          <dt>30体</dt><dd>称号「レジェンド」</dd>
+          <dt>こうげき</dt><dd>ふつうに攻撃する</dd>
+          <dt>まもる</dt><dd>そのターンに受けるダメージを大きく減らす</dd>
+          <dt>ためる</dt><dd>攻撃しないかわりに、次のこうげきが2倍以上になる</dd>
         </dl>
+        <p class="muted">ボスは次の行動を予告します。「大技がくる」ならまもる、「まもりの構え」ならためる、が基本です。12ターンで倒しきれないと負け。</p>
+        <p class="muted">その日はじめて勝つと、挑んだモンスターのレベルが1上がり、ボスが仲間になって図鑑に入ります。倒したボスが3体で「つわもの」、10体で「チャンピオン」、30体で「レジェンド」の称号。</p>
       </div>
       <div class="panel">
         <h2>属性</h2>
@@ -356,6 +386,7 @@ function normalize(raw){
   return c;
 }
 function kindOf(code){
+  if(/^B\d{8}$/.test(code)) return {k:"boss",label:`${code.slice(1,5)}/${code.slice(5,7)}/${code.slice(7,9)} のボス`};
   if(code.length===13){
     if(/^97[89]/.test(code)) return {k:"book",label:"本"};
     if(/^192/.test(code)) return {k:"price",label:"本の2段目"};
@@ -413,6 +444,7 @@ function tribeFromPath(path){ // いちばん細かいジャンルから順に�
 }
 function tribeOf(code){ // 族と、表示するジャンル
   const k=kindOf(code).k;
+  if(k==="boss"){ const keys=Object.keys(TRIBES).filter(x=>x!=="sticker"&&x!=="mystery"); return {key:pick(rng("bosstribe:"+code),keys),path:null}; }
   if(k==="book") return {key:"book",path:["本"]};
   if(k==="mag") return {key:"mag",path:["雑誌"]};
   if(k==="store") return {key:"sticker",path:["お店のシール"]};
@@ -442,6 +474,7 @@ async function lookup(code){ // "ok" か "error"
 }
 
 /* ---------- モンスター ---------- */
+const BOSS_END=["キング","オウ","ドラ","ザウルス","ジャオウ"];
 const ELEM=[
   {k:"炎",c:"#e0532c",beats:"森"},{k:"水",c:"#2f7fe0",beats:"炎"},{k:"雷",c:"#c99a00",beats:"水"},
   {k:"森",c:"#3c9a5a",beats:"雷"},{k:"影",c:"#7550c8",beats:"光"},{k:"光",c:"#e07fa8",beats:"影"}];
@@ -453,21 +486,23 @@ function makeMon(code){
   const roll=r();
   let rar=roll<.03?5:roll<.13?4:roll<.35?3:roll<.65?2:1;
   if(tb.key==="sticker" && rar<5 && r()<.5) rar++; // シールはちょっと得
+  if(kind.k==="boss") rar=5;
   let el=pick(r,ELEM);
   let pool=T.elems;
   if(tb.key==="drink"&&tb.path&&/お酒|ビール|ワイン|日本酒|焼酎|ウイスキー|チューハイ|リキュール/.test(tb.path[tb.path.length-1])) pool=["炎"];
   if(pool) el=E(pick(r,pool)); // 族が決まっていれば、属性は族のものだけ
   let name=""; const n=1+Math.floor(r()*2);
   for(let i=0;i<n;i++) name+=pick(r,SYL);
-  name+=pick(r,T.ends);
+  name+=kind.k==="boss"?pick(r,BOSS_END):pick(r,T.ends);
   const base=0.75+rar*0.18;
   const st={hp:Math.round((70+r()*50)*base),atk:Math.round((20+r()*20)*base),def:Math.round((12+r()*18)*base),spd:Math.round((10+r()*25)*base)};
   return {code,name,rar,el,st,kind,tribe:{key:tb.key,label:T.label,path:tb.path,trait:T.trait}};
 }
 const TITLE_STEPS=[[30,"レジェンド"],[10,"チャンピオン"],[3,"つわもの"]];
-function titleOf(code){ const d=S.mons[code]; const n=d&&d.beat?d.beat.length:0; const t=TITLE_STEPS.find(([k])=>n>=k); return t?t[1]:""; }
+const bossWins=code=>{ const d=S.mons[code]; return d&&d.boss?d.boss.length:0; };
+function titleOf(code){ const n=bossWins(code); const t=TITLE_STEPS.find(([k])=>n>=k); return t?t[1]:""; }
 function withLevel(m){
-  const d=S.mons[m.code]; const lv=d?Math.min(99,d.taps+(d.beat?d.beat.length:0)):1; const k=1+(lv-1)*0.08;
+  const d=S.mons[m.code]; const lv=d?Math.min(99,d.taps+(d.boss?d.boss.length:0)):1; const k=1+(lv-1)*0.08;
   return Object.assign({},m,{lv,s:{hp:Math.round(m.st.hp*k),atk:Math.round(m.st.atk*k),def:Math.round(m.st.def*k),spd:Math.round(m.st.spd*k)}});
 }
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,Math.round(amt<0?v*(1+amt):v+(255-v)*amt)));
@@ -526,9 +561,9 @@ function cardHTML(code,o){
     </div>
     <div class="mbody">
       <div class="mhead"><span class="mname">${esc(m.name)}</span><span class="mlv">Lv ${m.lv}</span></div>
-      <div class="mfrom"><b class="tribe">${esc(m.tribe.label)}</b>　${esc(m.tribe.path?m.tribe.path.join(" › "):m.kind.label)}　${esc(code)}</div>
+      <div class="mfrom"><b class="tribe">${esc(m.tribe.label)}</b>　${esc(m.tribe.path?m.tribe.path.join(" › "):m.kind.label)}　${m.kind.k==="boss"?"":esc(code)}</div>
       <div class="sbars">${row("HP",m.s.hp)}${row("こうげき",m.s.atk)}${row("ぼうぎょ",m.s.def)}${row("すばやさ",m.s.spd)}</div>
-      <div class="mfoot"><span>つよい <b>${m.el.beats}</b>　よわい <b>${weakTo(m.el.k).join("・")}</b></span><span>${d.taps}回召喚　${d.wins||0}勝${d.losses||0}敗${d.beat&&d.beat.length?`（倒した相手 ${d.beat.length}体）`:""}</span></div>
+      <div class="mfoot"><span>つよい <b>${m.el.beats}</b>　よわい <b>${weakTo(m.el.k).join("・")}</b></span><span>${d.taps}回召喚　${d.wins||0}勝${d.losses||0}敗${d.boss&&d.boss.length?`（倒したボス ${d.boss.length}体）`:""}</span></div>
     </div>
   </article>`;
 }
@@ -560,10 +595,9 @@ async function register(raw,say){ // 商品を調べてから図鑑に記録。�
   beep(); save(); renderCount();
   return {code,isNew,m:withLevel(makeMon(code))};
 }
-function placeSlot(r,slot){
-  S.battle[slot]=r.code; save(); show("battle"); renderBattle();
-  logAdd(`${r.m.name}（Lv${r.m.lv}）が来た！${r.isNew?"　図鑑に登録":""}`);
-  if(S.battle.a&&S.battle.b) logAdd("「たたかう」を押してください","w");
+function chooseFighter(r){
+  bossState().choice=r.code; save(); show("battle"); renderBattle();
+  logReset(`${r.m.name}（Lv${r.m.lv}）で挑む${r.isNew?"　図鑑に登録":""}`);
 }
 function presentSummon(r){
   const {code,isNew,m}=r;
@@ -594,7 +628,7 @@ function bNote(t){ // 対戦タブの一時メッセージ。表示中なら出�
 }
 function mSay(t,alert){ const el=$("#mLed"); el.textContent=t; el.classList.toggle("alert",!!alert); }
 const video=$("#video"), modal=$("#scanModal");
-const TITLES={summon:"スキャンして召喚",a:"左の枠に呼ぶ",b:"右の枠に呼ぶ"};
+const TITLES={summon:"スキャンして召喚",p:"ボスに挑むモンスターを呼ぶ"};
 function openScan(t){
   target=t||"summon"; beep(); // 音をこの操作で許可しておく
   $("#scanTitle").textContent=TITLES[target];
@@ -646,14 +680,10 @@ async function accept(raw){ // カメラでも手入力でも、読んだ番号�
   if(processing) return; processing=true;
   const tg=target;
   const retry=()=>{ processing=false; if(camOK) setTimeout(startCamera,1400); };
-  if(tg!=="summon"){
-    const other=tg==="a"?S.battle.b:S.battle.a;
-    if(normalize(raw)===other){ mSay("同じモンスターどうしは戦えません",true); retry(); return; }
-  }
   const r=await register(raw,mSay);
   if(!r){ retry(); return; }
   processing=false; closeScan();
-  if(tg==="summon") presentSummon(r); else placeSlot(r,tg);
+  if(tg==="summon") presentSummon(r); else chooseFighter(r);
 }
 $("#scanBtn").addEventListener("click",()=>openScan("summon"));
 $("#againBtn").addEventListener("click",()=>openScan("summon"));
@@ -673,6 +703,11 @@ $("#codeBtn").addEventListener("click",codeSubmit);
 $("#code").addEventListener("keydown",e=>{ if(e.key==="Enter") codeSubmit(); });
 
 /* シェア */
+async function shareText(text){
+  const url=location.href.split("#")[0];
+  try{ if(navigator.share){ await navigator.share({text,url}); return; } }catch(e){ if(e&&e.name==="AbortError") return; }
+  try{ await navigator.clipboard.writeText(text+" "+url); toast("シェア用の文をコピーしました"); }catch(e){ toast(text); }
+}
 $("#shareBtn").addEventListener("click",async()=>{
   if(!S.last) return; const m=withLevel(makeMon(S.last));
   const text=`バーコードをピッしたら ${stars(m.rar)} の「${m.name}」（${m.el.k}属性・Lv${m.lv}）が出てきた`;
@@ -704,67 +739,154 @@ $("#dexGrid").addEventListener("click",e=>{const c=e.target.closest(".cell"); if
   $("#dexDetail").innerHTML=cardHTML(c.dataset.code); paint($("#dexDetail"));
   $("#dexDetail").scrollIntoView({behavior:"smooth",block:"nearest"});});
 
-/* ---------- 対戦 ---------- */
-function fighterHTML(code,hp,max){
-  return code? filledHTML(code,hp,max) : `<div class="slot-empty"><span class="ghost" aria-hidden="true">？</span><button class="btn primary small" data-slot="${slotOf}">スキャン</button></div>`;
+/* ---------- きょうのボス ---------- */
+const MAX_TRIES=3, MAX_TURNS=12;
+const BK={hp:1.4,atk:0.55,def:0.5}; // ボスの強さ（★5の素の強さに対する倍率）。Lv1で考えて戦うと1回あたり3割ほど勝てる
+const CHARGE_P=2.4, CHARGE_B=3.5, GUARD=0.2; // ためたこうげきの倍率（自分／ボス）、まもったときに受けるダメージの割合
+const PATTERNS=[["attack","charge","attack","guard"],["attack","attack","charge","attack"],["charge","attack","attack","guard"],["guard","charge","attack","attack"]];
+function todayKey(){ return new Date(Date.now()+9*3600e3).toISOString().slice(0,10).replace(/-/g,""); }
+function bossState(){
+  const k=todayKey();
+  if(!S.boss||S.boss.date!==k) S.boss={date:k,tries:0,won:false,best:null,choice:S.boss?S.boss.choice:null};
+  if(S.boss.choice&&!S.mons[S.boss.choice]) S.boss.choice=null;
+  return S.boss;
 }
-let slotOf="a";
-function filledHTML(code,hp,max){
-  const m=withLevel(makeMon(code)); hp=hp==null?m.s.hp:hp; max=max||m.s.hp; const pct=Math.max(0,hp/max*100);
-  return `<canvas data-mon="${esc(code)}"></canvas><div class="n">${esc(m.name)}</div>
-    <span class="chip" style="background:${m.el.c}">${m.el.k}・Lv${m.lv}</span>
-    <div class="hp"><i class="${pct<30?"low":""}" style="width:${pct}%"></i></div><div class="hpn">${Math.max(0,hp)} / ${max}</div>`;
+function bossInfo(){
+  const bs=bossState(), code="B"+bs.date, m=makeMon(code);
+  return {code,m,st:{hp:Math.round(m.st.hp*BK.hp),atk:Math.round(m.st.atk*BK.atk),def:Math.round(m.st.def*BK.def),spd:m.st.spd},pat:PATTERNS[(hash("pat:"+bs.date)>>>0)%PATTERNS.length]};
 }
+const bossAct=(bi,t)=>bi.pat[t%bi.pat.length];
+function intentText(bi,t,charged){
+  const a=bossAct(bi,t);
+  if(a==="attack") return charged?"大技がくる！":"こうげきしてくる";
+  if(a==="charge") return "力をためている…";
+  return "まもりの構えをとる";
+}
+let G=null; // 戦っている間だけの状態
+function hpBar(hp,max){ const p=Math.max(0,hp/max*100); return `<div class="hp"><i class="${p<30?"low":""}" style="width:${p}%"></i></div><div class="hpn">${Math.max(0,hp)} / ${max}</div>`; }
 function renderBattle(){
-  slotOf="a"; $("#fA").innerHTML=fighterHTML(S.battle.a); slotOf="b"; $("#fB").innerHTML=fighterHTML(S.battle.b); paint($("#fA")); paint($("#fB"));
-  const ids=sortedCodes();
-  $("#pickGrid").innerHTML=ids.length?ids.map(c=>cellHTML(c,c===S.battle.a||c===S.battle.b)).join(""):`<div class="empty">図鑑にモンスターがいません。</div>`;
-  paint($("#pickGrid"));
+  const bs=bossState(), bi=bossInfo(), bm=bi.m, left=MAX_TRIES-bs.tries;
+  $("#tries").textContent=`挑戦 のこり${left}回${bs.best?`　記録 ${bs.best}ターン`:""}`;
+  const bc=$("#bossCard"); bc.style.setProperty("--el",bm.el.c); bc.classList.toggle("down",!!(G&&G.over&&G.win));
+  bc.innerHTML=`<canvas data-mon="${bi.code}" aria-label="${esc(bm.name)}の姿"></canvas>
+    <div class="binfo"><div class="bname">${esc(bm.name)}</div>
+      <div><span class="chip" style="background:${bm.el.c}">${bm.el.k}属性</span> <span class="bsub">${esc(bm.tribe.label)}</span></div>
+      ${hpBar(G?G.bHp:bi.st.hp,bi.st.hp)}</div>`;
+  paint(bc);
+  const it=$("#intent");
+  if(G&&!G.over){ it.className="intent"; it.textContent="ボスの次の行動："+intentText(bi,G.turn,G.bCh); }
+  else { it.className="intent calm"; it.textContent=`よわい属性は ${weakTo(bm.el.k).join("・")}。ボスは毎ターン、次の行動を予告します`; }
+  const me=$("#meCard");
+  if(bs.choice){ const pm=withLevel(makeMon(bs.choice)); me.className="me";
+    me.innerHTML=`<canvas data-mon="${esc(bs.choice)}" aria-label="${esc(pm.name)}の姿"></canvas>
+      <div class="binfo"><div class="bname" style="font-size:18px">${esc(pm.name)}</div>
+        <div><span class="chip" style="background:${pm.el.c}">${pm.el.k}・Lv${pm.lv}</span>${G&&G.pCh&&!G.over?' <span class="charged">力をためている</span>':""}</div>
+        ${hpBar(G?G.pHp:pm.s.hp,pm.s.hp)}</div>`; paint(me);
+  } else { me.className="me empty";
+    me.innerHTML=`<span class="ghost" aria-hidden="true">？</span><div class="binfo"><span class="muted">挑むモンスターを、スキャンするか下の図鑑から選んでください</span><button class="btn primary small" data-act="scanP" style="width:max-content">スキャン</button></div>`; }
+  const ac=$("#actions");
+  if(G&&!G.over){
+    ac.innerHTML=`<div class="turn">ターン ${G.turn+1} / ${MAX_TURNS}</div><div class="acts">
+      <button class="act${G.pCh?" hot":""}" data-act="attack">こうげき<small>${G.pCh?"ためた力で大ダメージ":"ふつうに攻撃"}</small></button>
+      <button class="act" data-act="guard">まもる<small>受けるダメージを大きく減らす</small></button>
+      <button class="act" data-act="charge"${G.pCh?" disabled":""}>ためる<small>次のこうげきが2倍以上</small></button></div>`;
+  } else if(G&&G.over){
+    ac.innerHTML=`<div class="res"><div class="big ${G.win?"win":"lose"}">${G.win?`${G.turn}ターンで勝った！`:(G.timeout?"時間切れ…":"負けてしまった…")}</div>
+      ${G.win?`<div class="two"><button class="btn primary" data-act="share">結果をシェア</button><button class="btn" data-act="again"${left?"":" disabled"}>${left?`もう一度（のこり${left}回）`:"また明日"}</button></div>`
+             :`<button class="btn primary wide" data-act="again"${left?"":" disabled"}>${left?`もう一度挑む（のこり${left}回）`:"きょうの挑戦はおしまい。また明日"}</button>`}</div>`;
+  } else {
+    ac.innerHTML=left? `<button class="btn primary wide" data-act="start"${bs.choice?"":" disabled"}>挑む（のこり${left}回）</button>`
+                     : `<button class="btn wide" disabled>きょうの挑戦はおしまい。また明日</button>`;
+  }
+  if(!$("#log").children.length) logReset(bs.won?`きょうのボスは倒しました。記録 ${bs.best}ターン`:"ボスは1日に3回まで挑戦できます。");
+  const fighting=G&&!G.over; $("#pickArea").hidden=!!fighting;
+  if(!fighting){
+    const ids=sortedCodes();
+    $("#pickGrid").innerHTML=ids.length?ids.map(c=>cellHTML(c,c===bs.choice)).join(""):`<div class="empty">図鑑にモンスターがいません。スキャンして呼んでください。</div>`;
+    paint($("#pickGrid"));
+  }
 }
 function logReset(t){$("#log").innerHTML=`<div>${esc(t)}</div>`;}
 function logAdd(t,cls){const d=document.createElement("div"); if(cls) d.className=cls; d.textContent=t; $("#log").appendChild(d); $("#log").scrollTop=1e6;}
-let fighting=false;
-function runBattle(){
-  if(fighting) return; const {a,b}=S.battle;
-  if(!a||!b){logReset("2体そろうと戦えます。"); return;}
-  if(a===b){logReset("同じモンスター同士では戦えません。"); S.battle.b=null; save(); renderBattle(); return;}
-  fighting=true;
-  const A=withLevel(makeMon(a)), B=withLevel(makeMon(b)), hp={a:A.s.hp,b:B.s.hp}, r=rng(a+b+Date.now());
-  const mult=(x,y)=>x.el.beats===y.el.k?1.5:y.el.beats===x.el.k?0.7:1;
-  logReset(`${A.name} と ${B.name} の勝負！`);
-  let turn=A.s.spd>=B.s.spd?"a":"b", rounds=0;
-  const fast=matchMedia("(prefers-reduced-motion:reduce)").matches;
-  const step=()=>{
-    const atk=turn==="a"?A:B, def=turn==="a"?B:A, dk=turn==="a"?"b":"a", crit=r()<0.1, mu=mult(atk,def);
-    const dmg=Math.round(Math.max(3,atk.s.atk*mu*(0.85+r()*0.3)-def.s.def*0.45)*(crit?1.6:1));
-    hp[dk]-=dmg;
-    logAdd(`${atk.name} のこうげき！ ${dmg}ダメージ${crit?"（会心）":""}${mu>1?"　こうかばつぐん":mu<1?"　いまひとつ":""}`);
-    const fEl=dk==="a"?$("#fA"):$("#fB"), mon=dk==="a"?A:B;
-    fEl.innerHTML=fighterHTML(mon.code,hp[dk],mon.s.hp); paint(fEl); fEl.classList.remove("hurt"); void fEl.offsetWidth; fEl.classList.add("hurt");
-    rounds++;
-    if(hp[dk]<=0||rounds>=40){
-      const win=hp[dk]<=0?atk:(hp.a/A.s.hp>=hp.b/B.s.hp?A:B), lose=win===A?B:A;
-      const wd=S.mons[win.code], before=titleOf(win.code);
-      wd.wins=(wd.wins||0)+1; S.mons[lose.code].losses=(S.mons[lose.code].losses||0)+1;
-      wd.beat=wd.beat||[]; const first=!wd.beat.includes(lose.code); if(first) wd.beat.push(lose.code);
-      save();
-      logAdd(`${win.name} の勝ち！`,"w");
-      if(first){ logAdd(`はじめて倒した相手。${win.name} のレベルが ${withLevel(makeMon(win.code)).lv} に上がった`,"w");
-        const after=titleOf(win.code); if(after&&after!==before) logAdd(`称号「${after}」を手に入れた！`,"w"); }
-      else logAdd("前にも倒した相手なので、レベルはそのまま");
-      fighting=false; return;
-    }
-    turn=dk; setTimeout(step,fast?60:750);
-  };
-  setTimeout(step,fast?60:600);
+const mult=(x,y)=>x.el.beats===y.el.k?1.5:y.el.beats===x.el.k?0.7:1;
+function damage(atk,def,ax,dx,charged,guarded,boss){ // ax/dx はモンスター（属性を見る）
+  let d=Math.max(3,atk.atk*mult(ax,dx)*(0.9+Math.random()*0.2)-def.def*0.45);
+  if(charged) d*=boss?CHARGE_B:CHARGE_P; if(guarded) d*=GUARD;
+  const crit=Math.random()<0.08; if(crit) d*=1.5;
+  return {d:Math.round(d),crit};
 }
-$("#fightBtn").addEventListener("click",()=>{renderBattle(); runBattle();});
-$("#clearBtn").addEventListener("click",()=>{if(fighting) return; S.battle.a=null; S.battle.b=null; save(); renderBattle(); logReset("2体えらんでください。");});
-$(".arena").addEventListener("click",e=>{ const b=e.target.closest("[data-slot]"); if(!b||fighting) return; openScan(b.dataset.slot); });
-$("#pickGrid").addEventListener("click",e=>{ if(fighting) return; const c=e.target.closest(".cell"); if(!c) return; const id=c.dataset.code;
-  if(S.battle.a===id) S.battle.a=null; else if(S.battle.b===id) S.battle.b=null;
-  else if(!S.battle.a) S.battle.a=id; else if(!S.battle.b) S.battle.b=id; else {S.battle.a=S.battle.b; S.battle.b=id;}
-  save(); renderBattle(); });
+function startFight(){
+  const bs=bossState(); if(!bs.choice||bs.tries>=MAX_TRIES) return;
+  const bi=bossInfo(), pm=withLevel(makeMon(bs.choice));
+  bs.tries++; save();
+  G={pHp:pm.s.hp,bHp:bi.st.hp,turn:0,pCh:false,bCh:false,over:false};
+  logReset(`${bi.m.name} が現れた！`); renderBattle();
+}
+function shake(el){ el.classList.remove("hurt"); void el.offsetWidth; el.classList.add("hurt"); }
+function doTurn(pa){
+  if(!G||G.over) return;
+  const bs=bossState(), bi=bossInfo(), bm=bi.m, pm=withLevel(makeMon(bs.choice)), ba=bossAct(bi,G.turn);
+  const pG=pa==="guard", bG=ba==="guard";
+  if(pa==="charge"){ G.pCh=true; logAdd(`${pm.name} は力をためた`); }
+  if(pG) logAdd(`${pm.name} はまもりの構え`);
+  if(ba==="charge"){ G.bCh=true; logAdd(`${bm.name} は力をためている…`); }
+  if(bG) logAdd(`${bm.name} はまもりの構え`);
+  const order=pm.s.spd>=bi.st.spd?["p","b"]:["b","p"];
+  for(const who of order){
+    if(G.pHp<=0||G.bHp<=0) break;
+    if(who==="p"&&pa==="attack"){
+      const r=damage(pm.s,bi.st,pm,bm,G.pCh,bG); G.bHp-=r.d;
+      logAdd(`${pm.name} のこうげき！ ${r.d}ダメージ${G.pCh?"（ためた力）":""}${r.crit?"（会心）":""}${mult(pm,bm)>1?"　こうかばつぐん":mult(pm,bm)<1?"　いまひとつ":""}`,G.pCh?"w":"");
+      G.pCh=false; shake($("#bossCard"));
+    }
+    if(who==="b"&&ba==="attack"){
+      const big=G.bCh, r=damage(bi.st,pm.s,bm,pm,big,pG,true); G.pHp-=r.d;
+      logAdd(`${bm.name} の${big?"大技":"こうげき"}！ ${r.d}ダメージ${pG?"（まもった）":""}`);
+      G.bCh=false; shake($("#meCard"));
+    }
+  }
+  G.turn++;
+  if(G.bHp<=0) return finish(true);
+  if(G.pHp<=0) return finish(false);
+  if(G.turn>=MAX_TURNS){ G.timeout=true; return finish(false); }
+  renderBattle();
+}
+function finish(win){
+  const bs=bossState(), bi=bossInfo(), bm=bi.m, d=S.mons[bs.choice];
+  G.over=true; G.win=win;
+  if(win){
+    d.wins=(d.wins||0)+1;
+    logAdd(`${bm.name} をたおした！（${G.turn}ターン）`,"w");
+    bs.best=bs.best?Math.min(bs.best,G.turn):G.turn;
+    if(!bs.won){
+      bs.won=true;
+      const before=titleOf(bs.choice);
+      d.boss=d.boss||[]; if(!d.boss.includes(bs.date)) d.boss.push(bs.date);
+      const pm=withLevel(makeMon(bs.choice));
+      logAdd(`${pm.name} のレベルが ${pm.lv} に上がった`,"w");
+      const after=titleOf(bs.choice); if(after&&after!==before) logAdd(`称号「${after}」を手に入れた！`,"w");
+      if(!S.mons[bi.code]){ S.mons[bi.code]={taps:1,wins:0,losses:0,first:Date.now()}; logAdd(`${bm.name} が仲間になった！図鑑に登録`,"w"); renderCount(); }
+    } else logAdd("きょうのごほうびは受け取りずみ。記録だけ更新されます");
+  } else {
+    d.losses=(d.losses||0)+1;
+    logAdd(G.timeout?`${MAX_TURNS}ターンで倒しきれなかった`:"たおれてしまった…");
+  }
+  save(); renderBattle();
+}
+$("#v-battle").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-act]"); if(b&&!b.disabled){
+    const a=b.dataset.act;
+    if(a==="scanP") openScan("p");
+    else if(a==="start") startFight();
+    else if(a==="attack"||a==="guard"||a==="charge") doTurn(a);
+    else if(a==="again"){ G=null; logReset("もう一度。ボスの予告をよく見て"); renderBattle(); }
+    else if(a==="share"){ const bs=bossState(), bm=bossInfo().m, pm=withLevel(makeMon(bs.choice));
+      shareText(`きょうのボス「${bm.name}」を、${pm.tribe.label}の「${pm.name}」で${G.turn}ターンで倒した！`); }
+    return;
+  }
+  const c=e.target.closest("#pickGrid .cell"); if(!c||(G&&!G.over)) return;
+  const bs=bossState(); bs.choice=c.dataset.code; save(); if(G&&G.over) G=null; renderBattle();
+});
 
 /* ---------- 遊び方・データ ---------- */
 $("#elemHelp").innerHTML=ELEM.map(e=>`<span class="chip" style="background:${e.c}">${e.k}</span> は ${e.beats} につよい`).join("<br>");

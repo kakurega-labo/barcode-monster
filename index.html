@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="家にある商品のバーコードをピッとすると、その商品だけのモンスターが召喚される。同じバーコードなら、だれが読んでも同じモンスター。">
 <meta name="theme-color" content="#127a5c">
-<title>ピッ！とモンスター</title>
+<title>バーコードモンスター</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
@@ -105,6 +105,8 @@ details.acc summary::-webkit-details-marker{display:none}
 details.acc summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-3px);transition:transform .2s}
 details.acc[open] summary::after{transform:rotate(-135deg) translateY(-3px)}
 details.acc .acc-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+#v-help details.acc{flex:none}
+#v-help{gap:10px}
 .stage .sample{position:absolute;bottom:10px;right:12px;z-index:2;border:2px solid var(--warn);color:var(--warn);background:var(--counter);font-weight:700;padding:0 6px;font-size:12px;border-radius:4px}
 .mcard.summon .stage canvas{animation:pop .9s cubic-bezier(.2,1.4,.4,1) both}
 .mcard.summon .stage::after{content:"";position:absolute;left:50%;top:58%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:4px solid var(--el);animation:burst .8s ease-out both}
@@ -185,6 +187,12 @@ details.acc .acc-body{padding:0 14px 14px;display:flex;flex-direction:column;gap
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .btn.wide{width:100%}
 .btn:disabled{opacity:.5;cursor:default}
+#dexDetail .toast{margin-bottom:8px}
+.feedbox{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.code{font-family:var(--f-mono);font-size:24px;letter-spacing:.12em;font-weight:700;user-select:all;word-break:break-all}
+.restore{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.ok{color:var(--ok);font-size:13px;font-weight:700}
+.ng{color:var(--warn);font-size:13px;font-weight:700}
 .note{margin:0;text-align:center;font-size:13px;font-weight:700;color:var(--warn)}
 .slot-empty{color:var(--muted);font-size:12px;padding:14px 0 6px;display:flex;flex-direction:column;align-items:center;gap:8px}
 .slot-empty .ghost{width:64px;height:64px;font-size:24px;border-width:2px}
@@ -215,7 +223,7 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
 <div class="wrap" id="scroller">
   <div class="inner">
     <header class="top">
-      <h1 class="logo"><b>ピッ！</b>とモンスター</h1>
+      <h1 class="logo"><b>バーコード</b>モンスター</h1>
       <span class="count" id="count"></span>
     </header>
 
@@ -223,7 +231,7 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
     <section id="v-scan" class="view">
       <div class="scanner">
         <div class="scanrow">
-          <div class="led" id="led">バーコードで召喚</div>
+          <div class="led" id="led">バーコードでモンスター召喚</div>
           <button class="btn primary" id="scanBtn">スキャン</button>
         </div>
       </div>
@@ -281,8 +289,9 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
           <div id="sampleCard"></div>
         </div>
       </details>
-      <div class="panel">
-        <h2>族</h2>
+      <details class="acc">
+        <summary>族</summary>
+        <div class="acc-body">
         <p class="muted">商品のジャンルで族が決まります。族によって、属性と見た目の特徴が決まります。</p>
         <dl class="kinds">
           <dt>おかし族</dt><dd>お菓子。光か炎、羽がある</dd>
@@ -294,9 +303,11 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
         </dl>
         <p class="muted">本の裏にある2段目のバーコード（192ではじまる方）は、モンスターになりません。上の段を読んでください。</p>
         <p class="muted">商品のジャンルは、Yahoo!ショッピングの商品情報で調べています。</p>
-      </div>
-      <div class="panel">
-        <h2>きょうのボス</h2>
+        </div>
+      </details>
+      <details class="acc">
+        <summary>きょうのボス</summary>
+        <div class="acc-body">
         <p class="muted">毎日ちがうボスが1体、だれのところにも同じボスが出ます。手持ちのモンスター1体で、1日3回まで挑戦できます。</p>
         <dl class="kinds">
           <dt>こうげき</dt><dd>ふつうに攻撃する</dd>
@@ -305,16 +316,36 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
         </dl>
         <p class="muted">ボスは次の行動を予告します。「大技がくる」ならまもる、「まもりの構え」ならためる、が基本です。12ターンで倒しきれないと負け。</p>
         <p class="muted">その日はじめて勝つと、挑んだモンスターのレベルが1上がり、ボスが仲間になって図鑑に入ります。倒したボスが3体で「つわもの」、10体で「チャンピオン」、30体で「レジェンド」の称号。</p>
-      </div>
-      <div class="panel">
-        <h2>属性</h2>
+        <p class="muted">仲間になったボスは、図鑑から「えさをあげる」で育てられます。スキャンした商品を食べるとレベルが上がり、食べたものの族で伸びる能力が変わります（おかし・あそびでこうげき、のみもの・ごはんでHP、ほん・ぶんぐでぼうぎょ、でんき・ざっしですばやさ など）。同じ商品は1回だけ。</p>
+        </div>
+      </details>
+      <details class="acc">
+        <summary>属性</summary>
+        <div class="acc-body">
         <p class="muted" id="elemHelp"></p>
-      </div>
-      <div class="panel">
-        <h2>データ</h2>
-        <p class="muted">図鑑はこの端末のブラウザの中だけに保存されます。</p>
+        </div>
+      </details>
+      <details class="acc">
+        <summary>引き継ぎコード</summary>
+        <div class="acc-body">
+        <div id="syncBox"></div>
+        <div class="restore">
+          <label for="restoreCode" class="muted">別の端末の図鑑を、コードで戻す</label>
+          <div class="field">
+            <input id="restoreCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCDE-23456" maxlength="11">
+            <button class="btn" id="restoreBtn">戻す</button>
+          </div>
+          <div id="restoreMsg"></div>
+        </div>
+        </div>
+      </details>
+      <details class="acc">
+        <summary>データ</summary>
+        <div class="acc-body">
+        <p class="muted">図鑑はこの端末のブラウザに保存されています。iPhoneでは、Safariで7日間開かないと消えることがあります。共有ボタンから「ホーム画面に追加」して遊ぶと消えにくくなります。</p>
         <div class="row" id="resetRow"><button class="btn danger small" id="resetBtn">図鑑をすべて消す</button></div>
-      </div>
+        </div>
+      </details>
       <div class="credit">
 <!-- Begin Yahoo! JAPAN Web Services Attribution Snippet -->
 <span style="margin:15px 15px 15px 15px"><a href="https://developer.yahoo.co.jp/sitemap/">Webサービス by Yahoo! JAPAN</a></span>
@@ -362,7 +393,22 @@ const KEY="pipimon-v1";
 let S={mons:{},info:{},battle:{a:null,b:null},last:null};
 try{const raw=localStorage.getItem(KEY); if(raw) S=Object.assign(S,JSON.parse(raw));}catch(e){}
 if(!S.info) S.info={};
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} schedulePush();}
+/* 引き継ぎ：コードがあれば、変わるたびに少し待ってサーバーにも保存する */
+let pushT=null, pushing=false;
+function payload(){ const o=Object.assign({},S); delete o.sync; return o; }
+function schedulePush(){ if(!S.sync||!S.sync.code) return; clearTimeout(pushT); pushT=setTimeout(push,4000); }
+async function push(keepalive){
+  if(!S.sync||!S.sync.code||pushing) return; pushing=true; clearTimeout(pushT);
+  try{
+    const res=await fetch("/api/save",{method:"POST",headers:{"content-type":"application/json"},keepalive:!!keepalive,body:JSON.stringify({code:S.sync.code,data:payload()})});
+    const j=await res.json().catch(()=>null);
+    if(res.status===404){ S.sync={lost:true}; try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} renderSync(); }
+    else if(j&&j.ok){ S.sync.at=Date.now(); try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} renderSync(); }
+  }catch(e){}
+  pushing=false;
+}
+document.addEventListener("visibilitychange",()=>{ if(document.hidden&&pushT) push(true); });
 
 /* ---------- 乱数 ---------- */
 function hash(str){let h1=0xdeadbeef^str.length,h2=0x41c6ce57^str.length;
@@ -437,6 +483,46 @@ const GENRE_RULES=[ // 上から順に当てはめる
   [/CD|音楽|DVD|映像|楽器/,"media"],
   [/食品|麺|ラーメン|うどん|そば|パスタ|インスタント|調味料|米|パン|缶詰|レトルト/,"food"]
 ];
+// 細かいジャンル（いちばん細かい段から順に見る）。名前の終わりと、族のあとの小さな説明に使う
+const SUB_RULES=[
+  [/ポテト|じゃがいも/,"ポテト",["ポテ","チップ","ジャガ"]],
+  [/チョコ/,"チョコ",["チョコ","カカオ"]],
+  [/グミ/,"グミ",["グミ","ムニ"]],
+  [/キャンディ|飴|あめ|ドロップ/,"あめ",["アメ","キャン","ドロ"]],
+  [/クッキー|ビスケット|焼き菓子|クラッカー/,"やき菓子",["クッキ","ビス","ザク"]],
+  [/せんべい|米菓|あられ|おかき/,"せんべい",["セン","バリ","アラレ"]],
+  [/ガム/,"ガム",["ガム","クチャ"]],
+  [/アイス|氷菓/,"アイス",["アイス","ヒエ"]],
+  [/スナック/,"スナック",["カリ","サク","スナ"]],
+  [/ラーメン|麺|うどん|そば|パスタ|焼きそば/,"めん",["メン","ズル","ヌードル"]],
+  [/カレー/,"カレー",["カレ","スパイ"]],
+  [/調味料|醤油|しょうゆ|味噌|みそ|ソース|ドレッシング|マヨネーズ|ケチャップ/,"ちょうみりょう",["アジ","ショウ","タレ"]],
+  [/パン|シリアル/,"パン",["パン","モチ"]],
+  [/米|ご飯|ごはん/,"おこめ",["コメ","ゴハン"]],
+  [/缶詰|レトルト/,"かんづめ",["カン","パック"]],
+  [/^水、炭酸水$|ミネラルウォーター|天然水/,"水",["ミズ","スイ","ウォタ"]],
+  [/炭酸|サイダー|コーラ/,"たんさん",["シュワ","ソーダ","パチ"]],
+  [/お茶|緑茶|紅茶|麦茶|茶飲料/,"お茶",["チャ","ティー"]],
+  [/コーヒー/,"コーヒー",["コーヒ","ブラク"]],
+  [/ジュース|果汁|野菜飲料/,"ジュース",["ジュス","フルー"]],
+  [/ビール|ワイン|日本酒|焼酎|ウイスキー|チューハイ|リキュール|お酒/,"お酒",["グビ","ヨイ","サケ"]],
+  [/牛乳|乳飲料|ヨーグルト/,"ミルク",["ミルク","モー"]],
+  [/水/,"水",["ミズ","スイ","ウォタ"]],
+  [/洗剤|柔軟剤|漂白/,"せんざい",["アワ","センザ"]],
+  [/ティッシュ|トイレットペーパー|キッチンペーパー/,"かみ",["フワ","ペパ"]],
+  [/歯ブラシ|歯みがき|歯磨き|オーラル/,"はみがき",["ハミガ","ピカ"]],
+  [/シャンプー|ボディ|石けん|せっけん|ハンドソープ/,"せっけん",["アワワ","シャボ"]],
+  [/ペン|鉛筆|筆記|マーカー/,"ペン",["ペン","カキ"]],
+  [/ノート|メモ|手帳/,"ノート",["ノート","ページ"]],
+  [/電池|充電/,"でんち",["デンチ","ボルト"]],
+  [/ペットフード|ドッグ|キャット|犬|猫/,"ペット",["ワン","ニャ"]],
+  [/化粧|リップ|ネイル/,"コスメ",["キラ","ルージュ"]]
+];
+function subOf(path){
+  const p=(path||[]).slice().reverse();
+  for(const level of p) for(const [re,label,ends] of SUB_RULES) if(re.test(level)) return {label,ends};
+  return null;
+}
 function tribeFromPath(path){ // いちばん細かいジャンルから順に見る
   const p=(path||[]).slice().reverse();
   for(const level of p) for(const [re,k] of GENRE_RULES) if(re.test(level)) return k;
@@ -493,17 +579,27 @@ function makeMon(code){
   if(pool) el=E(pick(r,pool)); // 族が決まっていれば、属性は族のものだけ
   let name=""; const n=1+Math.floor(r()*2);
   for(let i=0;i<n;i++) name+=pick(r,SYL);
-  name+=kind.k==="boss"?pick(r,BOSS_END):pick(r,T.ends);
+  const sub=tb.path?subOf(tb.path):null;
+  name+=kind.k==="boss"?pick(r,BOSS_END):pick(r,sub?sub.ends:T.ends);
   const base=0.75+rar*0.18;
   const st={hp:Math.round((70+r()*50)*base),atk:Math.round((20+r()*20)*base),def:Math.round((12+r()*18)*base),spd:Math.round((10+r()*25)*base)};
-  return {code,name,rar,el,st,kind,tribe:{key:tb.key,label:T.label,path:tb.path,trait:T.trait}};
+  return {code,name,rar,el,st,kind,tribe:{key:tb.key,label:T.label,sub:sub?sub.label:null,path:tb.path,trait:T.trait}};
 }
 const TITLE_STEPS=[[30,"レジェンド"],[10,"チャンピオン"],[3,"つわもの"]];
 const bossWins=code=>{ const d=S.mons[code]; return d&&d.boss?d.boss.length:0; };
 function titleOf(code){ const n=bossWins(code); const t=TITLE_STEPS.find(([k])=>n>=k); return t?t[1]:""; }
+// えさ：族ごとに伸びる能力
+const FEED_STAT={snack:"atk",play:"atk",active:"atk",media:"atk",drink:"hp",food:"hp",nature:"hp",health:"hp",book:"def",stationery:"def",home:"def",mag:"spd",beauty:"spd",tech:"spd",fashion:"spd",sticker:"spd"};
+const STAT_JA={hp:"HP",atk:"こうげき",def:"ぼうぎょ",spd:"すばやさ"};
+function feedStat(code){ const k=tribeOf(code).key; return FEED_STAT[k]||["hp","atk","def","spd"][(hash("feed:"+code)>>>0)%4]; }
+const isBoss=code=>/^B\d{8}$/.test(code);
 function withLevel(m){
-  const d=S.mons[m.code]; const lv=d?Math.min(99,d.taps+(d.boss?d.boss.length:0)):1; const k=1+(lv-1)*0.08;
-  return Object.assign({},m,{lv,s:{hp:Math.round(m.st.hp*k),atk:Math.round(m.st.atk*k),def:Math.round(m.st.def*k),spd:Math.round(m.st.spd*k)}});
+  const d=S.mons[m.code];
+  const fed=d&&d.feed?d.feed:[];
+  const lv=d?Math.min(99,d.taps+(d.boss?d.boss.length:0)+fed.length):1; const k=1+(lv-1)*0.08;
+  const bonus={hp:0,atk:0,def:0,spd:0}; fed.forEach(c=>bonus[feedStat(c)]++);
+  const st=x=>Math.round(m.st[x]*k*(1+bonus[x]*0.06));
+  return Object.assign({},m,{lv,fed:fed.length,bonus,s:{hp:st("hp"),atk:st("atk"),def:st("def"),spd:st("spd")}});
 }
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,Math.round(amt<0?v*(1+amt):v+(255-v)*amt)));
   return "#"+((1<<24)|(f(n>>16)<<16)|(f(n>>8&255)<<8)|f(n&255)).toString(16).slice(1);}
@@ -546,6 +642,10 @@ function drawMon(cv,code){
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const stars=n=>"★".repeat(n)+"☆".repeat(5-n);
+function genreText(m){ // いちばん上と、いちばん細かい段だけ
+  const p=m.tribe.path; if(!p) return m.kind.label;
+  return p.length>2?[p[0],p[p.length-1]].join(" › "):p.join(" › ");
+}
 function cardHTML(code,o){
   o=o||{}; const m=withLevel(makeMon(code)); const d=S.mons[code]||{taps:0,wins:0,losses:0};
   const row=(label,v)=>`<span>${label}</span><span class="bar"><i style="width:${Math.min(100,v/260*100)}%"></i></span><b>${v}</b>`;
@@ -561,9 +661,9 @@ function cardHTML(code,o){
     </div>
     <div class="mbody">
       <div class="mhead"><span class="mname">${esc(m.name)}</span><span class="mlv">Lv ${m.lv}</span></div>
-      <div class="mfrom"><b class="tribe">${esc(m.tribe.label)}</b>　${esc(m.tribe.path?m.tribe.path.join(" › "):m.kind.label)}　${m.kind.k==="boss"?"":esc(code)}</div>
+      <div class="mfrom"><b class="tribe">${esc(m.tribe.label)}${m.tribe.sub?`（${esc(m.tribe.sub)}）`:""}</b>　${esc(genreText(m))}</div>
       <div class="sbars">${row("HP",m.s.hp)}${row("こうげき",m.s.atk)}${row("ぼうぎょ",m.s.def)}${row("すばやさ",m.s.spd)}</div>
-      <div class="mfoot"><span>つよい <b>${m.el.beats}</b>　よわい <b>${weakTo(m.el.k).join("・")}</b></span><span>${d.taps}回召喚　${d.wins||0}勝${d.losses||0}敗${d.boss&&d.boss.length?`（倒したボス ${d.boss.length}体）`:""}</span></div>
+      <div class="mfoot"><span>つよい <b>${m.el.beats}</b>　よわい <b>${weakTo(m.el.k).join("・")}</b></span><span>${isBoss(code)?`食べたもの ${m.fed}種類`:`${d.taps}回召喚`}　${d.wins||0}勝${d.losses||0}敗${d.boss&&d.boss.length?`（倒したボス ${d.boss.length}体）`:""}</span></div>
     </div>
   </article>`;
 }
@@ -594,6 +694,11 @@ async function register(raw,say){ // 商品を調べてから図鑑に記録。�
   d.taps++; d.last=Date.now(); S.last=code;
   beep(); save(); renderCount();
   return {code,isNew,m:withLevel(makeMon(code))};
+}
+function feedBoss(boss,r){
+  const d=S.mons[boss]; d.feed=d.feed||[]; d.feed.push(r.code); save();
+  const bm=withLevel(makeMon(boss)), stat=STAT_JA[feedStat(r.code)];
+  show("dex"); renderDex(); showDetail(boss,{summon:true,msg:`${bm.name} は ${r.m.tribe.label}のえさを食べた！ ${stat}が伸びて Lv ${bm.lv}`});
 }
 function chooseFighter(r){
   bossState().choice=r.code; save(); show("battle"); renderBattle();
@@ -628,10 +733,10 @@ function bNote(t){ // 対戦タブの一時メッセージ。表示中なら出�
 }
 function mSay(t,alert){ const el=$("#mLed"); el.textContent=t; el.classList.toggle("alert",!!alert); }
 const video=$("#video"), modal=$("#scanModal");
-const TITLES={summon:"スキャンして召喚",p:"ボスに挑むモンスターを呼ぶ"};
+const TITLES={summon:"スキャンして召喚",p:"ボスに挑むモンスターを呼ぶ",feed:"えさをスキャン"};
 function openScan(t){
   target=t||"summon"; beep(); // 音をこの操作で許可しておく
-  $("#scanTitle").textContent=TITLES[target];
+  $("#scanTitle").textContent=TITLES[target.split(":")[0]];
   $("#code").value=""; $("#codeMsg").textContent="";
   modal.hidden=false; startCamera();
 }
@@ -680,10 +785,15 @@ async function accept(raw){ // カメラでも手入力でも、読んだ番号�
   if(processing) return; processing=true;
   const tg=target;
   const retry=()=>{ processing=false; if(camOK) setTimeout(startCamera,1400); };
+  let boss=null;
+  if(tg.startsWith("feed:")){
+    boss=tg.slice(5); const fed=(S.mons[boss]&&S.mons[boss].feed)||[];
+    if(fed.includes(normalize(raw))){ mSay("この商品はもう食べました。ちがう商品をスキャン",true); retry(); return; }
+  }
   const r=await register(raw,mSay);
   if(!r){ retry(); return; }
   processing=false; closeScan();
-  if(tg==="summon") presentSummon(r); else chooseFighter(r);
+  if(boss) feedBoss(boss,r); else if(tg==="summon") presentSummon(r); else chooseFighter(r);
 }
 $("#scanBtn").addEventListener("click",()=>openScan("summon"));
 $("#againBtn").addEventListener("click",()=>openScan("summon"));
@@ -734,10 +844,18 @@ function renderDex(){
 }
 $("#dexSort").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; dexSort=b.dataset.sort;
   $("#dexSort").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false")); renderDex();});
-$("#dexGrid").addEventListener("click",e=>{const c=e.target.closest(".cell"); if(!c) return;
-  $("#dexGrid").querySelectorAll(".cell").forEach(x=>x.classList.toggle("sel",x===c));
-  $("#dexDetail").innerHTML=cardHTML(c.dataset.code); paint($("#dexDetail"));
-  $("#dexDetail").scrollIntoView({behavior:"smooth",block:"nearest"});});
+function showDetail(code,o){
+  $("#dexGrid").querySelectorAll(".cell").forEach(x=>x.classList.toggle("sel",x.dataset.code===code));
+  const m=withLevel(makeMon(code));
+  const feed=isBoss(code)?`<div class="feedbox">
+      <button class="btn primary wide" data-feed="${code}">えさをあげる（スキャン）</button>
+      <p class="muted">スキャンした商品を食べて育ちます。同じ商品は1回だけ。${m.fed?`よく伸びた能力：${topBonus(m)}`:"おかしでこうげき、のみもので HP など、食べたものの族で伸びる能力が変わります。"}</p></div>`:"";
+  $("#dexDetail").innerHTML=(o&&o.msg?`<p class="toast">${esc(o.msg)}</p>`:"")+cardHTML(code,o)+feed; paint($("#dexDetail"));
+  $("#dexDetail").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function topBonus(m){ return Object.entries(m.bonus).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${STAT_JA[k]}＋${v}`).join("　"); }
+$("#dexGrid").addEventListener("click",e=>{const c=e.target.closest(".cell"); if(c) showDetail(c.dataset.code);});
+$("#dexDetail").addEventListener("click",e=>{const b=e.target.closest("[data-feed]"); if(b) openScan("feed:"+b.dataset.feed);});
 
 /* ---------- きょうのボス ---------- */
 const MAX_TRIES=3, MAX_TURNS=12;
@@ -892,8 +1010,59 @@ $("#v-battle").addEventListener("click",async e=>{
 $("#elemHelp").innerHTML=ELEM.map(e=>`<span class="chip" style="background:${e.c}">${e.k}</span> は ${e.beats} につよい`).join("<br>");
 $("#resetRow").addEventListener("click",e=>{
   if(e.target.id==="resetBtn") $("#resetRow").innerHTML=`<span class="muted" style="align-self:center">図鑑がすべて消えます。</span><button class="btn danger small" id="resetYes">消す</button><button class="btn small" id="resetNo">やめる</button>`;
-  if(e.target.id==="resetYes"){ S={mons:{},info:{},battle:{a:null,b:null},last:null}; save(); renderCount(); renderIdle(); $("#resetRow").innerHTML=`<p class="muted">消しました。</p>`; }
+  if(e.target.id==="resetYes"){ S={mons:{},info:{},last:null}; G=null; save(); renderSync(); renderCount(); renderIdle(); $("#resetRow").innerHTML=`<p class="muted">消しました。</p>`; }
   if(e.target.id==="resetNo") $("#resetRow").innerHTML=`<button class="btn danger small" id="resetBtn">図鑑をすべて消す</button>`;
+});
+
+/* ---------- 引き継ぎコード ---------- */
+const fmtCode=c=>c.slice(0,5)+"-"+c.slice(5);
+function renderSync(){
+  const box=$("#syncBox"), sy=S.sync||{};
+  if(sy.code){
+    box.innerHTML=`<p class="muted">この端末の図鑑は、遊ぶたびに自動でこのコードに保存されます。180日遊ばないと消えます。</p>
+      <div class="code" id="codeText">${fmtCode(sy.code)}</div>
+      <div class="row"><button class="btn small" id="copyCode">コードをコピー</button><span class="muted" style="align-self:center">${sy.at?`最後に保存 ${new Date(sy.at).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}`:""}</span></div>
+      <p class="muted">コードを知っている人は、だれでもこの図鑑を戻せます。人に見せないでください。</p>`;
+  } else {
+    box.innerHTML=`<p class="muted">${sy.lost?'<span class="ng">前のコードは、長く使われなかったため消えました。</span>':""}コードを発行すると、図鑑をサーバーにも保存できます。ブラウザのデータが消えたときや、別の端末で続けたいときに、コードで戻せます。メールアドレスやパスワードはいりません。</p>
+      <button class="btn primary" id="issueBtn" style="width:max-content">引き継ぎコードを発行</button><div id="issueMsg"></div>`;
+  }
+}
+$("#v-help").addEventListener("click",async e=>{
+  const id=e.target.id;
+  if(id==="issueBtn"){
+    e.target.disabled=true; $("#issueMsg").innerHTML="";
+    try{
+      const res=await fetch("/api/save",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({data:payload()})});
+      const j=await res.json();
+      if(!j.code) throw new Error(j.error||"x");
+      S.sync={code:j.code,at:Date.now()}; try{localStorage.setItem(KEY,JSON.stringify(S));}catch(_){}
+      renderSync();
+    }catch(err){ e.target.disabled=false; $("#issueMsg").innerHTML=`<p class="ng">${String(err.message)==="limit"?"きょうはこれ以上発行できません。明日もう一度":"発行できませんでした。少ししてから、もう一度ためしてください"}</p>`; }
+  }
+  if(id==="copyCode"){
+    const t=fmtCode(S.sync.code);
+    try{ await navigator.clipboard.writeText(t); e.target.textContent="コピーしました"; setTimeout(()=>e.target.textContent="コードをコピー",1800); }
+    catch(_){ const r=document.createRange(); r.selectNodeContents($("#codeText")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+  }
+  if(id==="restoreBtn"){
+    const c=$("#restoreCode").value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if(c.length!==10){ $("#restoreMsg").innerHTML=`<p class="ng">コードは英数字10文字です</p>`; return; }
+    $("#restoreMsg").innerHTML=`<p class="muted">いまの図鑑は消えて、コードの図鑑に置きかわります。</p><div class="row"><button class="btn danger small" id="restoreYes" data-code="${c}">戻す</button><button class="btn small" id="restoreNo">やめる</button></div>`;
+  }
+  if(id==="restoreNo") $("#restoreMsg").innerHTML="";
+  if(id==="restoreYes"){
+    const c=e.target.dataset.code; e.target.disabled=true;
+    try{
+      const res=await fetch("/api/load?code="+c);
+      if(res.status===404){ $("#restoreMsg").innerHTML=`<p class="ng">そのコードは見つかりませんでした。入力ちがいか、180日使われずに消えた可能性があります</p>`; return; }
+      const j=await res.json(); if(!j.data) throw 0;
+      S=Object.assign({mons:{},info:{},last:null},j.data); S.sync={code:c,at:Date.now()}; G=null;
+      try{localStorage.setItem(KEY,JSON.stringify(S));}catch(_){}
+      $("#restoreCode").value=""; $("#restoreMsg").innerHTML=`<p class="ok">戻しました。図鑑 ${Object.keys(S.mons).length}体</p>`;
+      renderCount(); renderIdle(); renderSync();
+    }catch(err){ $("#restoreMsg").innerHTML=`<p class="ng">戻せませんでした。少ししてから、もう一度ためしてください</p>`; }
+  }
 });
 
 /* ---------- タブ ---------- */
@@ -906,7 +1075,7 @@ function show(v){
 }
 document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target.closest("button"); if(b) show(b.dataset.v);});
 
-renderCount(); renderIdle();
+renderCount(); renderIdle(); renderSync();
 })();
 </script>
 

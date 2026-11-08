@@ -1,5 +1,7 @@
 // ピッ！とモンスター サーバー（Cloudflare Pages の _worker.js）
 // /api/jan?code=JANコード → 商品のジャンル（例：["食品","菓子","スナック菓子"]）を返す。
+// /api/save（POST）→ 図鑑を預かって引き継ぎコードを返す。/api/load?code=… → 預かった図鑑を返す。
+//   180日間、保存も読み出しもされなかったコードは自動で消す。
 // それ以外のURLは、いつもどおり index.html などのファイルを返す。
 //
 // 設定（Pages のプロジェクト → Settings）
@@ -13,6 +15,8 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     if (url.pathname === "/api/jan") return jan(url, env);
+    if (url.pathname === "/api/save" && req.method === "POST") return saveDex(req, env);
+    if (url.pathname === "/api/load") return loadDex(url, env);
     return env.ASSETS.fetch(req);
   },
 };
@@ -95,4 +99,87 @@ function pickGenre(hits) {
   if (!count.size) return { found: false };
   const best = [...count.entries()].sort((a, b) => b[1] - a[1])[0][0];
   return { found: true, path: best.split("\u0000") };
+}
+
+// ---------- 引き継ぎコード ----------
+const KEEP_DAYS = 180;          // この日数使われなかったら消す
+const MAX_BYTES = 300 * 1024;   // 1つの図鑑の大きさの上限
+const ISSUE_PER_DAY = 10;       // 1つの回線から1日に発行できる数
+const ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // 見まちがえやすい I O L 0 1 を除く
+
+async function setupSaves(db) {
+  await db.batch([
+    db.prepare("CREATE TABLE IF NOT EXISTS saves (code TEXT PRIMARY KEY, data TEXT NOT NULL, at INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS issues (k TEXT PRIMARY KEY, n INTEGER NOT NULL, day TEXT NOT NULL)"),
+  ]);
+}
+function newCode() {
+  const b = crypto.getRandomValues(new Uint8Array(10));
+  return [...b].map((x) => ALPHA[x % ALPHA.length]).join("");
+}
+const today = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+async function ipKey(req) {
+  const ip = req.headers.get("cf-connecting-ip") || "unknown";
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("pipi:" + ip));
+  return [...new Uint8Array(h)].slice(0, 12).map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+async function cleanup(db) {
+  // ときどき（100回に1回ほど）古いものを掃除する
+  if (Math.random() > 0.01) return;
+  const old = Date.now() - KEEP_DAYS * 864e5;
+  await db.batch([
+    db.prepare("DELETE FROM saves WHERE at < ?").bind(old),
+    db.prepare("DELETE FROM issues WHERE day < ?").bind(today()),
+    db.prepare("DELETE FROM jan WHERE data = '{\"found\":false}' AND at < ?").bind(Date.now() - 30 * 864e5),
+  ]).catch(() => {});
+}
+
+async function saveDex(req, env) {
+  if (!env.DB) return json({ error: "nodb" }, 503);
+  const text = await req.text();
+  if (text.length > MAX_BYTES) return json({ error: "toolarge" }, 413);
+  let body;
+  try { body = JSON.parse(text); } catch (e) { return json({ error: "bad" }, 400); }
+  if (!body || typeof body.data !== "object" || body.data === null) return json({ error: "bad" }, 400);
+  const data = JSON.stringify(body.data);
+  const db = env.DB;
+  await setupSaves(db);
+  await cleanup(db);
+
+  // すでにあるコードの上書き
+  if (body.code) {
+    const code = String(body.code).toUpperCase();
+    if (!/^[A-Z0-9]{10}$/.test(code)) return json({ error: "bad" }, 400);
+    const r = await db.prepare("UPDATE saves SET data = ?, at = ? WHERE code = ?").bind(data, Date.now(), code).run();
+    if (!r.meta || !r.meta.changes) return json({ error: "notfound" }, 404);
+    return json({ ok: true, code });
+  }
+
+  // 新しいコードの発行（回線ごとに1日の上限あり）
+  const k = await ipKey(req), day = today();
+  const row = await db.prepare("SELECT n FROM issues WHERE k = ? AND day = ?").bind(k, day).first();
+  if (row && row.n >= ISSUE_PER_DAY) return json({ error: "limit" }, 429);
+  for (let i = 0; i < 5; i++) {
+    const code = newCode();
+    try {
+      await db.batch([
+        db.prepare("INSERT INTO saves (code, data, at) VALUES (?, ?, ?)").bind(code, data, Date.now()),
+        db.prepare("INSERT INTO issues (k, n, day) VALUES (?, 1, ?) ON CONFLICT(k) DO UPDATE SET n = CASE WHEN day = excluded.day THEN n + 1 ELSE 1 END, day = excluded.day").bind(k, day),
+      ]);
+      return json({ ok: true, code });
+    } catch (e) { /* まれにコードがかぶったら作り直す */ }
+  }
+  return json({ error: "busy" }, 503);
+}
+
+async function loadDex(url, env) {
+  if (!env.DB) return json({ error: "nodb" }, 503);
+  const code = (url.searchParams.get("code") || "").toUpperCase();
+  if (!/^[A-Z0-9]{10}$/.test(code)) return json({ error: "bad" }, 400);
+  const db = env.DB;
+  await setupSaves(db);
+  const row = await db.prepare("SELECT data, at FROM saves WHERE code = ?").bind(code).first();
+  if (!row || row.at < Date.now() - KEEP_DAYS * 864e5) return json({ error: "notfound" }, 404);
+  await db.prepare("UPDATE saves SET at = ? WHERE code = ?").bind(Date.now(), code).run();
+  return json({ data: JSON.parse(row.data) });
 }

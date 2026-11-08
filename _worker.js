@@ -1,7 +1,7 @@
 // ピッ！とモンスター サーバー（Cloudflare Pages の _worker.js）
 // /api/jan?code=JANコード → 商品のジャンル（例：["食品","菓子","スナック菓子"]）を返す。
 // /api/save（POST）→ 図鑑を預かって引き継ぎコードを返す。/api/load?code=… → 預かった図鑑を返す。
-//   180日間、保存も読み出しもされなかったコードは自動で消す。
+//   30日間、保存も読み出しもされなかったコードは自動で消す。
 // それ以外のURLは、いつもどおり index.html などのファイルを返す。
 //
 // 設定（Pages のプロジェクト → Settings）
@@ -102,7 +102,7 @@ function pickGenre(hits) {
 }
 
 // ---------- 引き継ぎコード ----------
-const KEEP_DAYS = 180;          // この日数使われなかったら消す
+const KEEP_DAYS = 30;           // この日数使われなかったら消す
 const MAX_BYTES = 300 * 1024;   // 1つの図鑑の大きさの上限
 const ISSUE_PER_DAY = 10;       // 1つの回線から1日に発行できる数
 const ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // 見まちがえやすい I O L 0 1 を除く

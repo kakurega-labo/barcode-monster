@@ -1019,7 +1019,7 @@ const fmtCode=c=>c.slice(0,5)+"-"+c.slice(5);
 function renderSync(){
   const box=$("#syncBox"), sy=S.sync||{};
   if(sy.code){
-    box.innerHTML=`<p class="muted">この端末の図鑑は、遊ぶたびに自動でこのコードに保存されます。180日遊ばないと消えます。</p>
+    box.innerHTML=`<p class="muted">この端末の図鑑は、遊ぶたびに自動でこのコードに保存されます。30日遊ばないと消えます。</p>
       <div class="code" id="codeText">${fmtCode(sy.code)}</div>
       <div class="row"><button class="btn small" id="copyCode">コードをコピー</button><span class="muted" style="align-self:center">${sy.at?`最後に保存 ${new Date(sy.at).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}`:""}</span></div>
       <p class="muted">コードを知っている人は、だれでもこの図鑑を戻せます。人に見せないでください。</p>`;
@@ -1055,7 +1055,7 @@ $("#v-help").addEventListener("click",async e=>{
     const c=e.target.dataset.code; e.target.disabled=true;
     try{
       const res=await fetch("/api/load?code="+c);
-      if(res.status===404){ $("#restoreMsg").innerHTML=`<p class="ng">そのコードは見つかりませんでした。入力ちがいか、180日使われずに消えた可能性があります</p>`; return; }
+      if(res.status===404){ $("#restoreMsg").innerHTML=`<p class="ng">そのコードは見つかりませんでした。入力ちがいか、30日使われずに消えた可能性があります</p>`; return; }
       const j=await res.json(); if(!j.data) throw 0;
       S=Object.assign({mons:{},info:{},last:null},j.data); S.sync={code:c,at:Date.now()}; G=null;
       try{localStorage.setItem(KEY,JSON.stringify(S));}catch(_){}

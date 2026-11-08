@@ -4,7 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="家にある商品のバーコードをピッとすると、その商品だけのモンスターが召喚される。同じバーコードなら、だれが読んでも同じモンスター。">
-<meta name="theme-color" content="#127a5c">
+<meta name="theme-color" content="#101416">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="canonical" href="https://barcode-monster.pages.dev/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://barcode-monster.pages.dev/">
+<meta property="og:title" content="バーコードモンスター">
+<meta property="og:description" content="家にある商品のバーコードをピッとすると、その商品だけのモンスターが召喚される。同じバーコードなら、だれが読んでも同じモンスター。">
+<meta property="og:image" content="https://barcode-monster.pages.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="バーコードモンスター。身の回りにある物のバーコードからモンスターを召喚">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
 <title>バーコードモンスター</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -185,6 +199,7 @@ details.acc .acc-body{padding:0 14px 14px;display:flex;flex-direction:column;gap
 .res .big.win{color:var(--ok)}
 .res .big.lose{color:var(--warn)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two .btn{white-space:nowrap;padding-inline:6px;font-size:clamp(13px,3.8vw,15px)}
 .btn.wide{width:100%}
 .btn:disabled{opacity:.5;cursor:default}
 #dexDetail .toast{margin-bottom:8px}
@@ -193,6 +208,23 @@ details.acc .acc-body{padding:0 14px 14px;display:flex;flex-direction:column;gap
 .restore{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
 .ok{color:var(--ok);font-size:13px;font-weight:700}
 .ng{color:var(--warn);font-size:13px;font-weight:700}
+/* 伝説：黒と金 */
+.mcard.legend,.boss.legend{--counter:#0e0d0a;--bg:#060605;--ink:#f3e8c8;--muted:#bba873;--line:#5a4a1f;--el:#c9a227;border-color:#c9a227;color:var(--ink);background-color:var(--counter)}
+.mcard.legend{box-shadow:0 0 0 1px #c9a227 inset,0 10px 30px -12px rgba(201,162,39,.55)}
+.mcard.legend .stage{background:radial-gradient(circle at 50% 58%,rgba(232,190,70,.55) 0,rgba(201,162,39,.16) 45%,transparent 70%),repeating-conic-gradient(from 0deg at 50% 58%,rgba(201,162,39,.16) 0 6deg,transparent 6deg 12deg),#060605}
+.mcard.legend .stage canvas{width:210px;height:210px}
+.mcard.legend .mname{color:#f1cf62}
+.mcard.legend .chip,.boss.legend .chip{background:linear-gradient(90deg,#8a6a12,#e6c25a,#8a6a12)!important;color:#1a1300}
+.mcard.legend .sbars .bar i{background:linear-gradient(90deg,#8a6a12,#e6c25a)}
+.boss.legend{background:radial-gradient(circle at 22% 50%,rgba(232,190,70,.45) 0,rgba(201,162,39,.12) 40%,transparent 70%),#0e0d0a}
+.boss.legend .bname{color:#f1cf62}
+.legend-tag{color:#d9b54a!important;font-weight:700;letter-spacing:.04em}
+.cell.legend{border-color:#c9a227;background:#0e0d0a;box-shadow:0 0 0 1px #c9a227 inset}
+.cell.legend .n{color:#f1cf62}
+.cell.legend .s{color:#bba873}
+.flash{position:fixed;inset:0;z-index:40;pointer-events:none;background:#ff2d3a;opacity:0}
+.flash.on{animation:redflash .45s ease-out}
+@keyframes redflash{0%{opacity:.55}100%{opacity:0}}
 .note{margin:0;text-align:center;font-size:13px;font-weight:700;color:var(--warn)}
 .slot-empty{color:var(--muted);font-size:12px;padding:14px 0 6px;display:flex;flex-direction:column;align-items:center;gap:8px}
 .slot-empty .ghost{width:64px;height:64px;font-size:24px;border-width:2px}
@@ -263,7 +295,7 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
 
     <!-- 対戦 -->
     <section id="v-battle" class="view" hidden>
-      <div class="bhead"><h2>きょうのボス</h2><span class="tries" id="tries"></span></div>
+      <div class="bhead"><h2 id="bossTitle">きょうのボス</h2><span class="tries" id="tries"></span></div>
       <article class="boss" id="bossCard"></article>
       <div class="intent" id="intent"></div>
       <div class="me" id="meCard"></div>
@@ -281,6 +313,7 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
       <div class="panel">
         <p>お菓子、本、洗剤、文房具。家にある商品のバーコードをスキャンすると、その商品だけのモンスターが召喚されます。</p>
         <p class="muted">同じバーコードからは、いつ、だれが読んでも同じモンスターが出ます。レアが出たら、商品の名前を添えてシェアしてみてください。</p>
+        <p class="muted">どこかに、伝説のバーコードモンスターがいるらしい。</p>
       </div>
       <details class="acc" id="sampleAcc">
         <summary>見本を見る</summary>
@@ -362,6 +395,7 @@ nav.tabs button[aria-selected="true"]{color:var(--accent)}
   <button role="tab" data-v="help" aria-selected="false"><svg class="g" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17.2h.01"/></svg>遊び方</button>
 </nav>
 
+<div class="flash" id="flash" aria-hidden="true"></div>
 <div class="modal" id="scanModal" hidden role="dialog" aria-modal="true" aria-labelledby="scanTitle">
   <div class="sheet">
     <div class="sheet-head">
@@ -567,7 +601,23 @@ const ELEM=[
 const E=k=>ELEM.find(e=>e.k===k);
 const weakTo=k=>ELEM.filter(e=>e.beats===k).map(e=>e.k);
 const SYL=["ピ","ポ","カ","ザ","モ","ル","ド","ガ","ニ","ョ","ラ","ペ","ク","ズ","ノ","ミ","バ","ゴ","チ","タ","フ","ヌ","メ","ジ"];
+/* ---------- 伝説のバーコードモンスター ---------- */
+const LEGEND_CODE="LSCANNON";
+const isLegend=c=>c===LEGEND_CODE;
+const LEGEND_SPRITE=["......LLLL......",".....LMMMMm.....","....LMmmmmMm....","....LMmkkmMm....","....LMmkkmMm....","...bLMmmmmMmb...","...bbmmmmmmbb...","..bbbbbbbbbbbb..","..bnbbbnnbbbnb..","..bnbbbnnbbbnb..","..bnnnnnnnnnnb..","..bnggnnnnggnb..","..bnggnnnnggnb..","..bnnnnnnnnnnb..","rrrrrrrrrrrrrrrr","..bnbbnbbnbbnb..","..bnbbnbbnbbnb..","..bbbbbbbbbbbb..","...bb......bb..."];
+const LEGEND_COL={b:"#eceee9",g:"#4fe0a8",r:"#ff2d3a",L:"#cdd4d7",M:"#96a0a6",m:"#545c63",k:"#1e2226",n:"#101416"}; // n：体の中のすき間（アイコンの地の色）
+const LEGEND_LV=8;
+const LEGEND={code:LEGEND_CODE,name:"スキャノン",rar:5,el:{k:"全",c:"#b8901f",beats:"全"},
+  st:{hp:150,atk:40,def:30,spd:40}, // Lv8で固定。強さはシミュレーションで決めた
+  kind:{k:"legend",label:"伝説のバーコードモンスター"},tribe:{key:"legend",label:"でんせつ",sub:null,path:null,trait:"none"}};
+function drawLegend(cv,glow){
+  const px=4,W=20; cv.width=W*px; cv.height=W*px;
+  const ctx=cv.getContext("2d"); ctx.clearRect(0,0,cv.width,cv.height);
+  LEGEND_SPRITE.forEach((row,y)=>[...row].forEach((c,x)=>{ if(c===".") return;
+    ctx.fillStyle=c==="k"&&glow?"#ff5a46":(c==="r"&&glow?"#ff7a7a":LEGEND_COL[c]); ctx.fillRect((x+2)*px,(y+1)*px,px,px); }));
+}
 function makeMon(code){
+  if(isLegend(code)) return Object.assign({},LEGEND);
   const r=rng("pipi:"+code), kind=kindOf(code), tb=tribeOf(code), T=TRIBES[tb.key];
   const roll=r();
   let rar=roll<.03?5:roll<.13?4:roll<.35?3:roll<.65?2:1;
@@ -594,6 +644,8 @@ const STAT_JA={hp:"HP",atk:"こうげき",def:"ぼうぎょ",spd:"すばやさ"}
 function feedStat(code){ const k=tribeOf(code).key; return FEED_STAT[k]||["hp","atk","def","spd"][(hash("feed:"+code)>>>0)%4]; }
 const isBoss=code=>/^B\d{8}$/.test(code);
 function withLevel(m){
+  if(isLegend(m.code)){ const k=1+(LEGEND_LV-1)*0.08, st=x=>Math.round(m.st[x]*k);
+    return Object.assign({},m,{lv:LEGEND_LV,fed:0,bonus:{hp:0,atk:0,def:0,spd:0},s:{hp:st("hp"),atk:st("atk"),def:st("def"),spd:st("spd")}}); }
   const d=S.mons[m.code];
   const fed=d&&d.feed?d.feed:[];
   const lv=d?Math.min(99,d.taps+(d.boss?d.boss.length:0)+fed.length):1; const k=1+(lv-1)*0.08;
@@ -619,7 +671,8 @@ function addTrait(g,N,trait){ // 族ごとの見た目の特徴（頭の上・�
     case "fins": set(6,0,2); set(7,0,2); set(7,1,2); break;
   }
 }
-function drawMon(cv,code){
+function drawMon(cv,code,glow){
+  if(isLegend(code)) return drawLegend(cv,glow);
   const m=makeMon(code), r=rng("sprite:"+code), N=12, P=1, px=4;
   cv.width=(N+P*2)*px; cv.height=(N+P*2)*px;
   const ctx=cv.getContext("2d"); ctx.clearRect(0,0,cv.width,cv.height);
@@ -649,7 +702,8 @@ function genreText(m){ // いちばん上と、いちばん細かい段だけ
 function cardHTML(code,o){
   o=o||{}; const m=withLevel(makeMon(code)); const d=S.mons[code]||{taps:0,wins:0,losses:0};
   const row=(label,v)=>`<span>${label}</span><span class="bar"><i style="width:${Math.min(100,v/260*100)}%"></i></span><b>${v}</b>`;
-  return `<article class="mcard${o.summon?" summon":""}" style="--el:${m.el.c}">
+  const lg=isLegend(code);
+  return `<article class="mcard${o.summon?" summon":""}${lg?" legend":""}" style="--el:${m.el.c}">
     <div class="stage">
       <span class="stars" aria-label="レア度${m.rar}">${stars(m.rar)}</span>
       <span class="elem chip" style="background:${m.el.c}">${m.el.k}属性</span>
@@ -663,11 +717,11 @@ function cardHTML(code,o){
       <div class="mhead"><span class="mname">${esc(m.name)}</span><span class="mlv">Lv ${m.lv}</span></div>
       <div class="mfrom"><b class="tribe">${esc(m.tribe.label)}${m.tribe.sub?`（${esc(m.tribe.sub)}）`:""}</b>　${esc(genreText(m))}</div>
       <div class="sbars">${row("HP",m.s.hp)}${row("こうげき",m.s.atk)}${row("ぼうぎょ",m.s.def)}${row("すばやさ",m.s.spd)}</div>
-      <div class="mfoot"><span>つよい <b>${m.el.beats}</b>　よわい <b>${weakTo(m.el.k).join("・")}</b></span><span>${isBoss(code)?`食べたもの ${m.fed}種類`:`${d.taps}回召喚`}　${d.wins||0}勝${d.losses||0}敗${d.boss&&d.boss.length?`（倒したボス ${d.boss.length}体）`:""}</span></div>
+      <div class="mfoot"><span>${lg?"つよい <b>すべての属性</b>　よわい <b>なし</b>":`つよい <b>${m.el.beats}</b>　よわい <b>${weakTo(m.el.k).join("・")}</b>`}</span><span>${lg?"育たない（Lv8で固定）":isBoss(code)?`食べたもの ${m.fed}種類`:`${d.taps}回召喚`}　${d.wins||0}勝${d.losses||0}敗${d.boss&&d.boss.length?`（倒したボス ${d.boss.length}体）`:""}</span></div>
     </div>
   </article>`;
 }
-function paint(root){(root||document).querySelectorAll("canvas[data-mon]").forEach(cv=>drawMon(cv,cv.dataset.mon));}
+function paint(root){(root||document).querySelectorAll("canvas[data-mon]").forEach(cv=>drawMon(cv,cv.dataset.mon,cv.dataset.glow==="1"));}
 function led(t,alert){const el=$("#led"); el.textContent=t; el.classList.toggle("alert",!!alert);}
 let toastT; function toast(t){const el=$("#toast"); el.textContent=t; el.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>el.hidden=true,4500);}
 let actx=null;
@@ -829,7 +883,7 @@ $("#shareBtn").addEventListener("click",async()=>{
 /* ---------- 図鑑 ---------- */
 function renderCount(){ $("#count").textContent=`図鑑 ${Object.keys(S.mons).length}体`; }
 function cellHTML(code,sel){const m=withLevel(makeMon(code));
-  return `<button class="cell${sel?" sel":""}" data-code="${esc(code)}"><canvas data-mon="${esc(code)}"></canvas><span class="n">${esc(m.name)}</span><span class="s">${"★".repeat(m.rar)} Lv${m.lv}</span></button>`;}
+  return `<button class="cell${sel?" sel":""}${isLegend(code)?" legend":""}" data-code="${esc(code)}"><canvas data-mon="${esc(code)}"></canvas><span class="n">${esc(m.name)}</span><span class="s">${"★".repeat(m.rar)} Lv${m.lv}</span></button>`;}
 let dexSort="new";
 function sortedCodes(){
   const ids=Object.keys(S.mons);
@@ -863,40 +917,48 @@ const BK={hp:1.4,atk:0.55,def:0.5}; // ボスの強さ（★5の素の強さに�
 const CHARGE_P=2.4, CHARGE_B=3.5, GUARD=0.2; // ためたこうげきの倍率（自分／ボス）、まもったときに受けるダメージの割合
 const PATTERNS=[["attack","charge","attack","guard"],["attack","attack","charge","attack"],["charge","attack","attack","guard"],["guard","charge","attack","attack"]];
 function todayKey(){ return new Date(Date.now()+9*3600e3).toISOString().slice(0,10).replace(/-/g,""); }
+const capturedBosses=()=>Object.keys(S.mons).filter(isBoss).length;
+// 伝説が現れる条件（遊び方には書かない）：ボスを10体仲間にしていて、毎月10日。日付が変わった時点で決める
+const legendDay=k=>k.slice(6)==="10"&&capturedBosses()>=10&&!S.mons[LEGEND_CODE];
 function bossState(){
   const k=todayKey();
-  if(!S.boss||S.boss.date!==k) S.boss={date:k,tries:0,won:false,best:null,choice:S.boss?S.boss.choice:null};
+  if(!S.boss||S.boss.date!==k) S.boss={date:k,tries:0,won:false,best:null,legend:legendDay(k),choice:S.boss?S.boss.choice:null};
   if(S.boss.choice&&!S.mons[S.boss.choice]) S.boss.choice=null;
   return S.boss;
 }
+const LBOSS={hp:380,atk:30,def:40,spd:52}; // 伝説がボスとして現れたときの強さ。ボス10体を持つ人が考えて戦って、1回25%・1日3回で約6割
+const LPAT=["attack","charge","attack","guard","attack","attack","charge","attack"];
 function bossInfo(){
-  const bs=bossState(), code="B"+bs.date, m=makeMon(code);
+  const bs=bossState();
+  if(bs.legend) return {code:LEGEND_CODE,m:makeMon(LEGEND_CODE),st:Object.assign({},LBOSS),pat:LPAT,legend:true};
+  const code="B"+bs.date, m=makeMon(code);
   return {code,m,st:{hp:Math.round(m.st.hp*BK.hp),atk:Math.round(m.st.atk*BK.atk),def:Math.round(m.st.def*BK.def),spd:m.st.spd},pat:PATTERNS[(hash("pat:"+bs.date)>>>0)%PATTERNS.length]};
 }
 const bossAct=(bi,t)=>bi.pat[t%bi.pat.length];
 function intentText(bi,t,charged){
   const a=bossAct(bi,t);
-  if(a==="attack") return charged?"大技がくる！":"こうげきしてくる";
-  if(a==="charge") return "力をためている…";
+  if(a==="attack") return charged?(bi.legend?"読み取り砲がくる！":"大技がくる！"):"こうげきしてくる";
+  if(a==="charge") return bi.legend?"照準を合わせている…":"力をためている…";
   return "まもりの構えをとる";
 }
 let G=null; // 戦っている間だけの状態
 function hpBar(hp,max){ const p=Math.max(0,hp/max*100); return `<div class="hp"><i class="${p<30?"low":""}" style="width:${p}%"></i></div><div class="hpn">${Math.max(0,hp)} / ${max}</div>`; }
 function renderBattle(){
   const bs=bossState(), bi=bossInfo(), bm=bi.m, left=MAX_TRIES-bs.tries;
-  $("#tries").textContent=`挑戦 のこり${left}回${bs.best?`　記録 ${bs.best}ターン`:""}`;
-  const bc=$("#bossCard"); bc.style.setProperty("--el",bm.el.c); bc.classList.toggle("down",!!(G&&G.over&&G.win));
-  bc.innerHTML=`<canvas data-mon="${bi.code}" aria-label="${esc(bm.name)}の姿"></canvas>
-    <div class="binfo"><div class="bname">${esc(bm.name)}</div>
+  $("#tries").textContent=`挑戦 残り${left}回${bs.best?`　記録 ${bs.best}ターン`:""}`;
+  $("#bossTitle").textContent=bi.legend?"伝説のボス":"きょうのボス";
+  const bc=$("#bossCard"); bc.style.setProperty("--el",bm.el.c); bc.classList.toggle("down",!!(G&&G.over&&G.win)); bc.classList.toggle("legend",!!bi.legend);
+  bc.innerHTML=`<canvas data-mon="${bi.code}"${G&&G.bCh&&!G.over&&bi.legend?' data-glow="1"':""} aria-label="${esc(bm.name)}の姿"></canvas>
+    <div class="binfo">${bi.legend?'<div class="bsub legend-tag">伝説のバーコードモンスター</div>':""}<div class="bname">${esc(bm.name)}</div>
       <div><span class="chip" style="background:${bm.el.c}">${bm.el.k}属性</span> <span class="bsub">${esc(bm.tribe.label)}</span></div>
       ${hpBar(G?G.bHp:bi.st.hp,bi.st.hp)}</div>`;
   paint(bc);
   const it=$("#intent");
   if(G&&!G.over){ it.className="intent"; it.textContent="ボスの次の行動："+intentText(bi,G.turn,G.bCh); }
-  else { it.className="intent calm"; it.textContent=`よわい属性は ${weakTo(bm.el.k).join("・")}。ボスは毎ターン、次の行動を予告します`; }
+  else { it.className="intent calm"; it.textContent=bi.legend?"弱い属性はない。照準の赤い線が光ったら、読み取り砲がくる":`${weakTo(bm.el.k).join("・")}属性に弱い。ボスは毎ターン、次の行動を予告します`; }
   const me=$("#meCard");
   if(bs.choice){ const pm=withLevel(makeMon(bs.choice)); me.className="me";
-    me.innerHTML=`<canvas data-mon="${esc(bs.choice)}" aria-label="${esc(pm.name)}の姿"></canvas>
+    me.innerHTML=`<canvas data-mon="${esc(bs.choice)}"${G&&G.pCh&&!G.over&&isLegend(bs.choice)?' data-glow="1"':""} aria-label="${esc(pm.name)}の姿"></canvas>
       <div class="binfo"><div class="bname" style="font-size:18px">${esc(pm.name)}</div>
         <div><span class="chip" style="background:${pm.el.c}">${pm.el.k}・Lv${pm.lv}</span>${G&&G.pCh&&!G.over?' <span class="charged">力をためている</span>':""}</div>
         ${hpBar(G?G.pHp:pm.s.hp,pm.s.hp)}</div>`; paint(me);
@@ -910,13 +972,13 @@ function renderBattle(){
       <button class="act" data-act="charge"${G.pCh?" disabled":""}>ためる<small>次のこうげきが2倍以上</small></button></div>`;
   } else if(G&&G.over){
     ac.innerHTML=`<div class="res"><div class="big ${G.win?"win":"lose"}">${G.win?`${G.turn}ターンで勝った！`:(G.timeout?"時間切れ…":"負けてしまった…")}</div>
-      ${G.win?`<div class="two"><button class="btn primary" data-act="share">結果をシェア</button><button class="btn" data-act="again"${left?"":" disabled"}>${left?`もう一度（のこり${left}回）`:"また明日"}</button></div>`
-             :`<button class="btn primary wide" data-act="again"${left?"":" disabled"}>${left?`もう一度挑む（のこり${left}回）`:"きょうの挑戦はおしまい。また明日"}</button>`}</div>`;
+      ${G.win?`<div class="two"><button class="btn primary" data-act="share">結果をシェア</button><button class="btn" data-act="again"${left?"":" disabled"}>${left?`もう一度（残り${left}回）`:"また明日"}</button></div>`
+             :`<button class="btn primary wide" data-act="again"${left?"":" disabled"}>${left?`もう一度挑む（残り${left}回）`:(bi.legend?"きょうの挑戦はおしまい。また来月の10日に":"きょうの挑戦はおしまい。また明日")}</button>`}</div>`;
   } else {
-    ac.innerHTML=left? `<button class="btn primary wide" data-act="start"${bs.choice?"":" disabled"}>挑む（のこり${left}回）</button>`
-                     : `<button class="btn wide" disabled>きょうの挑戦はおしまい。また明日</button>`;
+    ac.innerHTML=left? `<button class="btn primary wide" data-act="start"${bs.choice?"":" disabled"}>挑む（残り${left}回）</button>`
+                     : `<button class="btn wide" disabled>${bi.legend&&!bs.won?"きょうの挑戦はおしまい。また来月の10日に":"きょうの挑戦はおしまい。また明日"}</button>`;
   }
-  if(!$("#log").children.length) logReset(bs.won?`きょうのボスは倒しました。記録 ${bs.best}ターン`:"ボスは1日に3回まで挑戦できます。");
+  if(!$("#log").children.length) logReset(bs.won?`きょうのボスは倒しました。記録 ${bs.best}ターン`:bi.legend?"伝説のバーコードモンスターが現れた。挑戦は3回まで":"ボスは1日に3回まで挑戦できます。");
   const fighting=G&&!G.over; $("#pickArea").hidden=!!fighting;
   if(!fighting){
     const ids=sortedCodes();
@@ -926,7 +988,7 @@ function renderBattle(){
 }
 function logReset(t){$("#log").innerHTML=`<div>${esc(t)}</div>`;}
 function logAdd(t,cls){const d=document.createElement("div"); if(cls) d.className=cls; d.textContent=t; $("#log").appendChild(d); $("#log").scrollTop=1e6;}
-const mult=(x,y)=>x.el.beats===y.el.k?1.5:y.el.beats===x.el.k?0.7:1;
+const mult=(x,y)=>isLegend(x.code)?1.5:isLegend(y.code)?1:x.el.beats===y.el.k?1.5:y.el.beats===x.el.k?0.7:1; // 伝説はどの属性にも強い
 function damage(atk,def,ax,dx,charged,guarded,boss){ // ax/dx はモンスター（属性を見る）
   let d=Math.max(3,atk.atk*mult(ax,dx)*(0.9+Math.random()*0.2)-def.def*0.45);
   if(charged) d*=boss?CHARGE_B:CHARGE_P; if(guarded) d*=GUARD;
@@ -940,26 +1002,30 @@ function startFight(){
   G={pHp:pm.s.hp,bHp:bi.st.hp,turn:0,pCh:false,bCh:false,over:false};
   logReset(`${bi.m.name} が現れた！`); renderBattle();
 }
+function flashRed(){ const f=$("#flash"); f.classList.remove("on"); void f.offsetWidth; f.classList.add("on"); }
 function shake(el){ el.classList.remove("hurt"); void el.offsetWidth; el.classList.add("hurt"); }
 function doTurn(pa){
   if(!G||G.over) return;
   const bs=bossState(), bi=bossInfo(), bm=bi.m, pm=withLevel(makeMon(bs.choice)), ba=bossAct(bi,G.turn);
   const pG=pa==="guard", bG=ba==="guard";
-  if(pa==="charge"){ G.pCh=true; logAdd(`${pm.name} は力をためた`); }
+  const pL=isLegend(bs.choice), bL=!!bi.legend;
+  if(pa==="charge"){ G.pCh=true; logAdd(pL?`${pm.name} は照準を合わせた`:`${pm.name} は力をためた`); }
   if(pG) logAdd(`${pm.name} はまもりの構え`);
-  if(ba==="charge"){ G.bCh=true; logAdd(`${bm.name} は力をためている…`); }
+  if(ba==="charge"){ G.bCh=true; logAdd(bL?`${bm.name} は照準を合わせている…`:`${bm.name} は力をためている…`); }
   if(bG) logAdd(`${bm.name} はまもりの構え`);
   const order=pm.s.spd>=bi.st.spd?["p","b"]:["b","p"];
   for(const who of order){
     if(G.pHp<=0||G.bHp<=0) break;
     if(who==="p"&&pa==="attack"){
       const r=damage(pm.s,bi.st,pm,bm,G.pCh,bG); G.bHp-=r.d;
-      logAdd(`${pm.name} のこうげき！ ${r.d}ダメージ${G.pCh?"（ためた力）":""}${r.crit?"（会心）":""}${mult(pm,bm)>1?"　こうかばつぐん":mult(pm,bm)<1?"　いまひとつ":""}`,G.pCh?"w":"");
+      if(pL&&G.pCh) flashRed();
+      logAdd(`${pm.name} の${pL&&G.pCh?"読み取り砲":"こうげき"}！ ${r.d}ダメージ${G.pCh&&!pL?"（ためた力）":""}${r.crit?"（会心）":""}${mult(pm,bm)>1?"　こうかばつぐん":mult(pm,bm)<1?"　いまひとつ":""}`,G.pCh?"w":"");
       G.pCh=false; shake($("#bossCard"));
     }
     if(who==="b"&&ba==="attack"){
       const big=G.bCh, r=damage(bi.st,pm.s,bm,pm,big,pG,true); G.pHp-=r.d;
-      logAdd(`${bm.name} の${big?"大技":"こうげき"}！ ${r.d}ダメージ${pG?"（まもった）":""}`);
+      if(bL&&big) flashRed();
+      logAdd(`${bm.name} の${big?(bL?"読み取り砲":"大技"):"こうげき"}！ ${r.d}ダメージ${pG?"（まもった）":""}`);
       G.bCh=false; shake($("#meCard"));
     }
   }
@@ -981,9 +1047,10 @@ function finish(win){
       const before=titleOf(bs.choice);
       d.boss=d.boss||[]; if(!d.boss.includes(bs.date)) d.boss.push(bs.date);
       const pm=withLevel(makeMon(bs.choice));
-      logAdd(`${pm.name} のレベルが ${pm.lv} に上がった`,"w");
+      if(!isLegend(bs.choice)) logAdd(`${pm.name} のレベルが ${pm.lv} に上がった`,"w");
       const after=titleOf(bs.choice); if(after&&after!==before) logAdd(`称号「${after}」を手に入れた！`,"w");
-      if(!S.mons[bi.code]){ S.mons[bi.code]={taps:1,wins:0,losses:0,first:Date.now()}; logAdd(`${bm.name} が仲間になった！図鑑に登録`,"w"); renderCount(); }
+      if(!S.mons[bi.code]){ S.mons[bi.code]={taps:1,wins:0,losses:0,first:Date.now()};
+        logAdd(bi.legend?`伝説のバーコードモンスター ${bm.name}が仲間になった！図鑑に登録された`:`${bm.name}が仲間になった！図鑑に登録された`,"w"); renderCount(); }
     } else logAdd("きょうのごほうびは受け取りずみ。記録だけ更新されます");
   } else {
     d.losses=(d.losses||0)+1;
@@ -998,8 +1065,8 @@ $("#v-battle").addEventListener("click",async e=>{
     else if(a==="start") startFight();
     else if(a==="attack"||a==="guard"||a==="charge") doTurn(a);
     else if(a==="again"){ G=null; logReset("もう一度。ボスの予告をよく見て"); renderBattle(); }
-    else if(a==="share"){ const bs=bossState(), bm=bossInfo().m, pm=withLevel(makeMon(bs.choice));
-      shareText(`きょうのボス「${bm.name}」を、${pm.tribe.label}の「${pm.name}」で${G.turn}ターンで倒した！`); }
+    else if(a==="share"){ const bs=bossState(), bi=bossInfo(), bm=bi.m, pm=withLevel(makeMon(bs.choice));
+      shareText(bi.legend?`伝説のバーコードモンスター「${bm.name}」を、${pm.tribe.label}の「${pm.name}」で${G.turn}ターンで倒した！`:`きょうのボス「${bm.name}」を、${pm.tribe.label}の「${pm.name}」で${G.turn}ターンで倒した！`); }
     return;
   }
   const c=e.target.closest("#pickGrid .cell"); if(!c||(G&&!G.over)) return;
